@@ -48,7 +48,7 @@ public class theMenu extends MenuBar{ //hierarchy: this is a MenuBar, which cont
         viewMenu.getItems().addAll(fullScreenDD);
         Menu aboutMenu = new Menu("About");
 
-        this.getMenus().addAll(fileMenu, viewMenu, aboutMenu); //adds all menus to menubar
+        this.getMenus().addAll(fileMenu, viewMenu); //adds all menus to menubar- will add about menu later
 
     }
 
