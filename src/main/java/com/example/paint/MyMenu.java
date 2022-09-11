@@ -5,16 +5,10 @@ import javafx.event.EventHandler;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
-import javafx.stage.FileChooser;
 
-import java.io.File;
-
-public class theMenu extends MenuBar{ //hierarchy: this is a MenuBar, which contains Menus, which dropdown and contain MenuItems
-    public theMenu(){
+public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which contains Menus, which dropdown and contain MenuItems
+    public MyMenu(){
+        super();
         Menu fileMenu = new Menu("File"); //creates the menu bar across the top. Menus are subject to change.
         MenuItem newDD = new MenuItem("New (Ctrl + N)");    //Creates new, blank image. Keyboard shortcuts are implemented in PaintApplication.java
         newDD.setOnAction(new EventHandler<ActionEvent>() {
@@ -29,7 +23,7 @@ public class theMenu extends MenuBar{ //hierarchy: this is a MenuBar, which cont
         MenuItem saveDD = new MenuItem("Save (Ctrl + S)");  //saves/overwrites to old location
         saveDD.setOnAction(new EventHandler<ActionEvent>() {
             @Override public void handle(ActionEvent e) {
-                PaintApplication.save(PaintApplication.getLastSaved());
+                PaintApplication.save(PaintApplication.getCanvas().getLastSaved());
             }});
         MenuItem saveAsDD = new MenuItem("Save As");        //saves to a user-specified location
         saveAsDD.setOnAction(new EventHandler<ActionEvent>() {
