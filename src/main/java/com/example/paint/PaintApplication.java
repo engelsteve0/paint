@@ -13,6 +13,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -24,6 +25,7 @@ import javafx.embed.swing.SwingFXUtils;
 public class PaintApplication extends Application {
     private static Stage stage; //ensures that the stage can be referenced in functions
     private static MyCanvas currentCanvas;
+    private static MyToolbar toolbar;
     private static ScrollPane sp;
     @Override
     public void start(Stage stage) throws IOException {
@@ -33,9 +35,9 @@ public class PaintApplication extends Application {
         BorderPane layout = new BorderPane(); //uses a grid to align gui elements neatly- considering multiple grids for different parts of gui
 
         currentCanvas = new MyCanvas(128, 128);    //creates a canvas for loading images, drawing on
-        newImage();                             //starts with a blank slate
+        newImage();                                      //starts with a blank slate
         //VBox canvasBox = new VBox();
-        //canvasBox.getChildren().add(canvas);    //Not really used now but may be used to contain other tools in the future
+        //canvasBox.getChildren().add(canvas);           //Not really used now but may be used to contain other tools in the future
 
         this.sp = new ScrollPane();   //creates a new scrollpane, containing the canvas. This allows image to be scrolled through
         sp.setContent(currentCanvas);
@@ -43,12 +45,12 @@ public class PaintApplication extends Application {
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setFitToHeight(true); //center
-        sp.setFitToWidth(true); //center
-        //sp.setPannable(true); //allows user to pan through pane
+        sp.setFitToWidth(true);  //center
+        //sp.setPannable(true);  //allows user to pan through pane
         layout.setCenter(sp);
         layout.setAlignment(sp, Pos.CENTER);
         MyMenu menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
-        MyToolbar toolbar = new MyToolbar(); //see MyToolbar.java (extends the Toolbar class)
+        this.toolbar = new MyToolbar(); //see MyToolbar.java (extends the Toolbar class)
         VBox top = new VBox();
         top.getChildren().addAll(menu, toolbar); //creates a vertical box for the menu and toolbar, allowing them both to rest at the top
         layout.setTop(top);
@@ -87,6 +89,8 @@ public class PaintApplication extends Application {
         return stage;
     }
     public static MyCanvas getCanvas() { return currentCanvas;};
+    public static MyToolbar getToolbar() { return toolbar;}
+    public static ScrollPane getScrollPane() {return sp;}
 
     public static File chooseFile(String title, Boolean saving) {    //opens a file chooser dialogue in stage. Used for save as and open
         File file;
@@ -117,7 +121,7 @@ public class PaintApplication extends Application {
             currentCanvas.setHeight(image.getHeight());        //adjust canvas according to image size
             currentCanvas.setWidth(image.getWidth());
             currentCanvas.getGraphicsContext2D().drawImage(image, 0, 0, image.getWidth(), image.getHeight()); //actually draws image
-            stage.setTitle("Paint: " + file); //renames title to reflect name of file
+            stage.setTitle("Paint: " + file);      //renames title to reflect name of file
             currentCanvas.setScaleX(1);            //sets canvas scale to default to avoid losing image
             currentCanvas.setScaleY(1);
             sp.setHmax(1);
