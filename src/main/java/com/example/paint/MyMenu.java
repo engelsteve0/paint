@@ -9,6 +9,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -34,9 +35,9 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
 
         Menu helpMenu = new Menu("Help");
         MenuItem helpDD = new MenuItem("Help");                     //saves to a user-specified location
-        helpDD.setOnAction(e -> createPopup("Help", "Hello and welcome to Paint!\nTo begin, open an existing image or create a new 128x128 pixel canvas through the file menu.\nThen, select a tool in the toolbar and click on the canvas area to draw.\nBe sure to save your work frequently in the file menu!"));
+        helpDD.setOnAction(e -> createPopup("Help", "Hello and welcome to Paint!\nTo begin, open an existing image, or create a new 128x128 pixel canvas through the file menu.\nThen, select a tool in the toolbar and click on the canvas area to draw.\nBe sure to save your work frequently in the file menu!"));
         MenuItem aboutDD = new MenuItem("About");                     //saves to a user-specified location
-        aboutDD.setOnAction(e -> createPopup("About", "Paint is an all-purpose program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, who is a Computer Engineer and Comic Sans enthusiast."));
+        aboutDD.setOnAction(e -> createPopup("About", "Paint 0.0.2 is an all-purpose art program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, who is a Computer Engineer and Comic Sans enthusiast."));
         helpMenu.getItems().addAll(helpDD, aboutDD);
 
         this.getMenus().addAll(fileMenu, viewMenu, helpMenu); //adds all menus to menubar
@@ -50,7 +51,10 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.initOwner(PaintApplication.getStage());
         dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png")));
         VBox dialogVbox = new VBox(20);
-        dialogVbox.getChildren().add(new Text(bodyText));
+        Font CS = new Font("Comic Sans MS", 12);
+        Text t =  new Text(bodyText);
+        t.setFont(CS);
+        dialogVbox.getChildren().add(t);
         Scene dialogScene = new Scene(dialogVbox, 600, 200);
         dialog.setScene(dialogScene);
         dialog.show();

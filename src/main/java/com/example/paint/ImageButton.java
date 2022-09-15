@@ -22,17 +22,20 @@ public class ImageButton extends ToggleButton {
         setStyle(STYLE_NORMAL);
 
         setOnAction(e -> {
-            if(isSelected()) {
-                setStyle(STYLE_SELECTED);
+            if(PaintApplication.getToolbar().getSelectedTool()!=buttonId) {     //if the previous selection was different than this, set this as the new buttonId selected
                 PaintApplication.getToolbar().setSelectedTool(buttonId);
             }
-            else {
-                PaintApplication.getToolbar().setSelectedTool(-1);
-                setStyle(STYLE_NORMAL);
-            }
+            else
+                PaintApplication.getToolbar().setSelectedTool(-1);              //otherwise, deselect
         });
-        //setOnMousePressed(event -> setStyle(STYLE_PRESSED));
-        //setOnMouseReleased(event -> setStyle(STYLE_NORMAL));
+
+    }
+    public String getStyleType(String type){   //returns specific style selected so that it can be set here once
+        if (type.equals("selected")){
+            return STYLE_SELECTED;
+        }
+        else
+            return STYLE_NORMAL;
     }
 
 }
