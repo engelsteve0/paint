@@ -1,11 +1,16 @@
+//Steven Engel
+//MyMenu.java
+//This file houses much of the tedious GUI code needed to make the menubar across the top, as well as allowing for dialog popups for some of these options to be created
 package com.example.paint;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -21,12 +26,16 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         newDD.setOnAction(e -> PaintApplication.newImage());
         MenuItem openDD = new MenuItem("Open (Ctrl + O)");    //opens existing image from filesystem
         openDD.setOnAction(e -> PaintApplication.chooseFile("Open Image file", false));
+        SeparatorMenuItem s1 = new SeparatorMenuItem();
         MenuItem saveDD = new MenuItem("Save (Ctrl + S)");  //saves/overwrites to old location
         saveDD.setOnAction(e -> PaintApplication.save(PaintApplication.getCanvas().getLastSaved()));
         MenuItem saveAsDD = new MenuItem("Save As");        //saves to a user-specified location
         saveAsDD.setOnAction(e -> PaintApplication.saveAs());
+        SeparatorMenuItem s2 = new SeparatorMenuItem();
+        MenuItem exitDD = new MenuItem("Exit");             //exits the application
+        exitDD.setOnAction(e -> Platform.exit());
 
-        fileMenu.getItems().addAll(newDD, openDD, saveDD, saveAsDD);    //adds controls to fileMenu
+        fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, s2, exitDD);    //adds controls to fileMenu
 
         Menu viewMenu = new Menu("View");
         MenuItem fullScreenDD = new MenuItem("Toggle Full Screen (F11)");        //saves to a user-specified location
@@ -44,19 +53,19 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
 
     }
 
-    public void createPopup(String titleText, String bodyText) {        //creates a 300x200 popup window
-        final Stage dialog = new Stage();
+    public void createPopup(String titleText, String bodyText) {        //creates a 600x200 popup window
+        final Stage dialog = new Stage();                               //creates a new window
         dialog.setTitle(titleText);
-        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
         dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png")));
+        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
         VBox dialogVbox = new VBox(20);
-        Font CS = new Font("Comic Sans MS", 12);
+        Font CS = new Font("Comic Sans MS", 12);  //Prof. Rosasco's favorite font. Talk about catering to the user's needs! :)
         Text t =  new Text(bodyText);
         t.setFont(CS);
-        dialogVbox.getChildren().add(t);
+        dialogVbox.getChildren().add(t);                //actually adds text to window
         Scene dialogScene = new Scene(dialogVbox, 600, 200);
-        dialog.setScene(dialogScene);
+        dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
     }
 }

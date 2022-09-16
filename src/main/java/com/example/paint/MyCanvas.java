@@ -1,7 +1,9 @@
+//Steven Engel
+//MyCanvas.java
+//This file provides a way for each canvas to store data associated with it, such as the file being worked on.
 package com.example.paint;
 
 import javafx.scene.canvas.Canvas;
-
 import java.io.File;
 
 public class MyCanvas extends Canvas implements Cloneable{

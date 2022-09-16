@@ -1,3 +1,7 @@
+//Steven Engel
+//PaintApplication.java
+//The "brains" of the operation. This file launches a JavaFX application and instantiates various objects associated with said application.
+//This file also controls various functions which relate to the program as a whole (as opposed to particular files/canvases)
 package com.example.paint;
 
 import java.awt.image.RenderedImage;
@@ -46,7 +50,7 @@ public class PaintApplication extends Application {
         sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setFitToHeight(true); //center
         sp.setFitToWidth(true);  //center
-        //sp.setPannable(true);  //allows user to pan through pane
+        sp.setPannable(true);  //allows user to pan through pane
         layout.setCenter(sp);
         layout.setAlignment(sp, Pos.CENTER);
         MyMenu menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)

@@ -1,3 +1,13 @@
+//Steven Engel
+//MyToolbar.java
+//This file houses the functionality and GUI for the toolbar and various tools. The tools[] array contains ImageButtons which represent each of the tools
+//The ids and names for these tools are listed below:
+/*tools array:
+index name
+0     pencil
+1     eraser
+2     line
+*/
 package com.example.paint;
 
 import javafx.event.EventHandler;
@@ -13,18 +23,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Pair;
-
 import java.util.concurrent.atomic.AtomicBoolean;
-
-/*tools array:
-index name
-0     pencil
-1     eraser
-2     line
-*/
-
 public class MyToolbar extends ToolBar {
-    private Pair<Double, Double> initialTouch; //tracks initial mouse x and y when drawing
+    private double[] initialTouch; //tracks initial mouse x and y when drawing
     private MyCanvas layer;                     //serves as a temporary overlay for previewing
     private static final int numTools = 3;      //number of tools in tools array. Needs to be incremented to add tools
     private static int selectedTool = -1;       //keeps track of which tool is selected. -1 for none selected
@@ -32,16 +33,15 @@ public class MyToolbar extends ToolBar {
     private ColorPicker cp;                     //allows user to choose colors for their shapes/lines
     private Color selectedColor;                //keeps track of which color was picked
     private StackPane root;                     //temporary stackpane for housing overlay, etc.
-    private ToggleGroup tg;                     //stores toggle buttons (tools)
     private ImageButton[] tools;                //stores the tools themselves
     public MyToolbar(){ //calls Toolbar's constructor with no args
         super();
+        this.initialTouch = new double[2];
         //starting with the bottom of the hierarchy up (tool Buttons -> toolBox as a GridPane -> VBox containing the tools and title -> overall toolbar
         this.tools = new ImageButton[numTools];      //uses an array to store tool buttons
         tools[0] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/pencil.png")), 16, 16, 0 );
         tools[1] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/eraser.png")), 16, 16, 1 );
         tools[2] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/line.png")), 16, 16, 2 );
-        //ToggleGroup tg =  new ToggleGroup();
         GridPane toolBox = new GridPane();
         for(int i=0; i<numTools; i++)
         {
@@ -49,7 +49,6 @@ public class MyToolbar extends ToolBar {
             if(i>0 && i%10==0)                              //every 10th item, make a new row
                 j++;
             toolBox.add(tools[i], i%10, j);              //uses a gridpane to add tools. Can allow for multiple rows etc.
-            //tools[i].setToggleGroup(tg);
         }
 
         Label toolLabel = new Label("Tools");              //labels tool section
@@ -85,8 +84,6 @@ public class MyToolbar extends ToolBar {
 
         this.cp = new ColorPicker(Color.BLACK);               //creates a new color picker. To be used with tools
         this.getItems().addAll(toolVBox, s1, sizeSelector, s2, cp);         //adds items to toolbar
-
-
         cp.setOnAction((EventHandler) t -> selectedColor = cp.getValue());
 
 
@@ -123,7 +120,8 @@ public class MyToolbar extends ToolBar {
                                 canvas.getGraphicsContext2D().setStroke(Color.WHITE);
                             }
                             canvas.getGraphicsContext2D().strokeLine(event.getX(), event.getY(), event.getX(), event.getY());
-                            initialTouch = new Pair<>(event.getX(), event.getY());
+                            initialTouch[0] = event.getX();
+                            initialTouch[1] = event.getY();
                         }; break;
                         case 2: {     //Line-drawing tool                                      //Try to delete previous overlay if possible
                             try{
@@ -140,7 +138,8 @@ public class MyToolbar extends ToolBar {
                             PaintApplication.getScrollPane().setContent(root);
                             GraphicsContext context = layer.getGraphicsContext2D();
                             initDraw(context);
-                            initialTouch = new Pair<>(event.getX(), event.getY());//getSceneX(), event.getSceneY());
+                            initialTouch[0] = event.getX(); //getSceneX(), event.getSceneY());
+                            initialTouch[1] = event.getY();
                         } break;
                     }});
         canvas.addEventHandler(MouseEvent.MOUSE_DRAGGED,
@@ -151,13 +150,15 @@ public class MyToolbar extends ToolBar {
                             if(selectedTool==1){
                                 canvas.getGraphicsContext2D().setStroke(Color.WHITE);
                             }
-                            canvas.getGraphicsContext2D().strokeLine(event.getX(), event.getY(), event.getX(), event.getY());
+                            canvas.getGraphicsContext2D().strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());
+                            initialTouch[0] = event.getX(); //draws a more continuous line by storing previous initialTouch info
+                            initialTouch[1] = event.getY();
                         }; break;
                         case 2: {
                             GraphicsContext context = layer.getGraphicsContext2D();
                             initDraw(context);
                             context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
-                            context.strokeLine(initialTouch.getKey(), initialTouch.getValue(), event.getX(), event.getY());} break;
+                            context.strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());} break;
                     }});
         canvas.addEventHandler(MouseEvent.MOUSE_RELEASED,
                 event -> {
@@ -169,17 +170,14 @@ public class MyToolbar extends ToolBar {
                             GraphicsContext context = canvas.getGraphicsContext2D();
                             initDraw(context);
                             //context.clearRect(0, 0, PaintApplication.getCanvas().getWidth(), PaintApplication.getCanvas().getHeight());
-                            context.strokeLine(initialTouch.getKey(), initialTouch.getValue(), event.getX(), event.getY());
+                            context.strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());
                             PaintApplication.getScrollPane().setContent(canvas);    //sets scrollpane's content back to just canvas
                             try {
                                 layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
-                                root.getChildren().removeAll(canvas, layer);            //removes children from stackpane
+                                root.getChildren().removeAll(canvas, layer);        //removes children from stackpane
                             }
                             catch(Exception e){}} break;
                     }});
-    }
-    public ToggleGroup getToggleGroup(){
-        return tg;
     }
     public int getSelectedTool(){
         return selectedTool;
@@ -190,14 +188,14 @@ public class MyToolbar extends ToolBar {
     public void setSelectedTool(int toolNumber){
         selectedTool = toolNumber;
         for(int i=0; i<numTools; i++){
-            tools[i].setStyle(tools[i].getStyleType("normal"));                     //unselects all buttons
+            tools[i].setStyle(tools[i].getStyleType("normal"));                         //unselects all buttons
         }
         if (toolNumber>-1)  //if a button is selected
             tools[selectedTool].setStyle(tools[selectedTool].getStyleType("selected")); //shows that only this button is selected
     }
     private void initDraw(GraphicsContext gc){  //sets properties of the current graphicscontext so that it doesn't have to be done every single time we want to draw something
-        selectedColor = cp.getValue();
-        gc.setFill(selectedColor);
+        selectedColor = cp.getValue();  //updates color based on colorpicker
+        gc.setFill(selectedColor);      //primes tool with proper color/size
         gc.setStroke(selectedColor);
         gc.setLineWidth(sizeValue);
 
