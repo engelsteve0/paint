@@ -7,6 +7,8 @@ index name
 0     pencil
 1     eraser
 2     line
+3     picker
+4     dashed line
 */
 package com.example.paint;
 
@@ -27,9 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MyToolbar extends ToolBar {
     private double[] initialTouch; //tracks initial mouse x and y when drawing
     private MyCanvas layer;                     //serves as a temporary overlay for previewing
-    private static final int numTools = 3;      //number of tools in tools array. Needs to be incremented to add tools
+    private static final int numTools = 5;      //number of tools in tools array. Needs to be incremented to add tools
     private static int selectedTool = -1;       //keeps track of which tool is selected. -1 for none selected
-    private int sizeValue;                      //keeps track of line width, shape outline size
+    private int sizeValue = 1;                  //keeps track of line width, shape outline size
     private ColorPicker cp;                     //allows user to choose colors for their shapes/lines
     private Color selectedColor;                //keeps track of which color was picked
     private StackPane root;                     //temporary stackpane for housing overlay, etc.
@@ -42,6 +44,8 @@ public class MyToolbar extends ToolBar {
         tools[0] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/pencil.png")), 16, 16, 0 );
         tools[1] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/eraser.png")), 16, 16, 1 );
         tools[2] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/line.png")), 16, 16, 2 );
+        tools[3] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/picker.png")), 16, 16, 3 );
+        tools[4] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/dashline.png")), 16, 16, 4 );
         GridPane toolBox = new GridPane();
         for(int i=0; i<numTools; i++)
         {
@@ -89,10 +93,28 @@ public class MyToolbar extends ToolBar {
 
         this.root = new StackPane(); //is eventually used as an overlay for previewing changes
         this.layer = new MyCanvas((int) PaintApplication.getCanvas().getWidth(), (int) PaintApplication.getCanvas().getHeight());
+        setupTools();
 
+    }
+    public int getSelectedTool(){
+        return selectedTool;
+    }
+    public Color getSelectedColor(){
+        return selectedColor;
+    }
+    public void setSelectedTool(int toolNumber){
+        selectedTool = toolNumber;
+        for(int i=0; i<numTools; i++){
+            tools[i].setStyle(tools[i].getStyleType("normal"));                         //unselects all buttons
+        }
+        if (toolNumber>-1)  //if a button is selected
+            tools[selectedTool].setStyle(tools[selectedTool].getStyleType("selected")); //shows that only this button is selected
+    }
+    public void setupTools() {
         //this section handles the functionality of the tools
-        MyCanvas canvas = PaintApplication.getCanvas();                                         //adds event filter preventing right clicks
-        AtomicBoolean rightClick = new AtomicBoolean(false);
+        MyCanvas canvas = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas();
+
+        AtomicBoolean rightClick = new AtomicBoolean(false);                           //adds event filter preventing right clicks
         canvas.addEventFilter(MouseEvent.MOUSE_PRESSED, e ->                                    //prevents bug where canvas would freeze up on right mouse click. Disables right click
         {
             if( e.isSecondaryButtonDown()) {
@@ -112,18 +134,18 @@ public class MyToolbar extends ToolBar {
             }});
         canvas.addEventHandler(MouseEvent.MOUSE_PRESSED,
                 event -> {
-
+                    if(selectedTool!=3)
+                        canvas.setDirty(true);    //set canvas dirty unless just color picking
                     switch(selectedTool){
-                        case 0:  case 1:{     //pencil tool, eraser tool (just sets stroke color to white)
+                        case 1: case 0:{     //pencil tool, eraser tool (just sets stroke color to white)
                             initDraw(canvas.getGraphicsContext2D());
-                            if (selectedTool==1){
+                            if (selectedTool==1)
                                 canvas.getGraphicsContext2D().setStroke(Color.WHITE);
-                            }
                             canvas.getGraphicsContext2D().strokeLine(event.getX(), event.getY(), event.getX(), event.getY());
                             initialTouch[0] = event.getX();
                             initialTouch[1] = event.getY();
                         }; break;
-                        case 2: {     //Line-drawing tool                                      //Try to delete previous overlay if possible
+                        case 2: case 4: {     //Line-drawing tool                                      //Try to delete previous overlay if possible
                             try{
                                 layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
                                 root.getChildren().removeAll(canvas, layer);            //removes children from stackpane
@@ -138,25 +160,49 @@ public class MyToolbar extends ToolBar {
                             PaintApplication.getScrollPane().setContent(root);
                             GraphicsContext context = layer.getGraphicsContext2D();
                             initDraw(context);
+                            if(selectedTool==4){
+                                context.setLineDashes(2*sizeValue);
+                                canvas.getGraphicsContext2D().setLineDashes(2*sizeValue);
+                            }
+                            else{
+                                context.setLineDashes(1);
+                                canvas.getGraphicsContext2D().setLineDashes(1);
+                            }
                             initialTouch[0] = event.getX(); //getSceneX(), event.getSceneY());
                             initialTouch[1] = event.getY();
                         } break;
+                        case 3:{
+                            //color picker (user may click to pick a color from canvas)
+                            double ogx = canvas.getScaleX();//stores original x and y scales to reset after snapshot
+                            double ogy = canvas.getScaleY();
+                            canvas.setScaleX(1);            //briefly sets canvas scale to default to avoid snapshot errors
+                            canvas.setScaleY(1);
+                            cp.setValue(canvas.snapshot(null, null).getPixelReader().getColor((int)event.getX(), (int)event.getY()));
+                            canvas.setScaleX(ogx);          //resets scale
+                            canvas.setScaleY(ogy);
+                        } break;
+
                     }});
         canvas.addEventHandler(MouseEvent.MOUSE_DRAGGED,
                 event -> {
                     switch(selectedTool) {
-                        case 0: case 1:{     //pencil tool, eraser tool (just sets stroke color to white)
+                        case 1: canvas.getGraphicsContext2D().setStroke(Color.WHITE); case 0:{     //pencil tool, eraser tool (just sets stroke color to white)
                             initDraw(canvas.getGraphicsContext2D());
-                            if(selectedTool==1){
-                                canvas.getGraphicsContext2D().setStroke(Color.WHITE);
-                            }
                             canvas.getGraphicsContext2D().strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());
                             initialTouch[0] = event.getX(); //draws a more continuous line by storing previous initialTouch info
                             initialTouch[1] = event.getY();
                         }; break;
-                        case 2: {
+                        case 4: case 2:{            //for lines, shapes, use preview tool
                             GraphicsContext context = layer.getGraphicsContext2D();
                             initDraw(context);
+                            if(selectedTool==4){
+                                context.setLineDashes(2*sizeValue);
+                                canvas.getGraphicsContext2D().setLineDashes(2*sizeValue);
+                            }
+                            else{
+                                context.setLineDashes(1);
+                                canvas.getGraphicsContext2D().setLineDashes(1);
+                            }
                             context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
                             context.strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());} break;
                     }});
@@ -164,8 +210,7 @@ public class MyToolbar extends ToolBar {
                 event -> {
                     switch (selectedTool) {
                         case 0: case 1: ; break;
-                        case 2: {
-                            //PaintApplication.getScrollPane().setContent(canvas);
+                        case 2: case 4: {
 
                             GraphicsContext context = canvas.getGraphicsContext2D();
                             initDraw(context);
@@ -179,21 +224,7 @@ public class MyToolbar extends ToolBar {
                             catch(Exception e){}} break;
                     }});
     }
-    public int getSelectedTool(){
-        return selectedTool;
-    }
-    public Color getSelectedColor(){
-        return selectedColor;
-    }
-    public void setSelectedTool(int toolNumber){
-        selectedTool = toolNumber;
-        for(int i=0; i<numTools; i++){
-            tools[i].setStyle(tools[i].getStyleType("normal"));                         //unselects all buttons
-        }
-        if (toolNumber>-1)  //if a button is selected
-            tools[selectedTool].setStyle(tools[selectedTool].getStyleType("selected")); //shows that only this button is selected
-    }
-    private void initDraw(GraphicsContext gc){  //sets properties of the current graphicscontext so that it doesn't have to be done every single time we want to draw something
+    public void initDraw(GraphicsContext gc){  //sets properties of the current graphicscontext so that it doesn't have to be done every single time we want to draw something
         selectedColor = cp.getValue();  //updates color based on colorpicker
         gc.setFill(selectedColor);      //primes tool with proper color/size
         gc.setStroke(selectedColor);

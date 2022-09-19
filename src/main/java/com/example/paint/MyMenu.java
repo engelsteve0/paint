@@ -7,16 +7,15 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 
 public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which contains Menus, which dropdown and contain MenuItems
     public MyMenu(){
@@ -33,7 +32,10 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         saveAsDD.setOnAction(e -> PaintApplication.saveAs());
         SeparatorMenuItem s2 = new SeparatorMenuItem();
         MenuItem exitDD = new MenuItem("Exit");             //exits the application
-        exitDD.setOnAction(e -> Platform.exit());
+        exitDD.setOnAction(e -> {
+            Window window = PaintApplication.getStage().getScene().getWindow(); //calls special close request to ensure event in main program fires
+            window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
+        });
 
         fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, s2, exitDD);    //adds controls to fileMenu
 
@@ -46,7 +48,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         MenuItem helpDD = new MenuItem("Help");                     //saves to a user-specified location
         helpDD.setOnAction(e -> createPopup("Help", "Hello and welcome to Paint!\nTo begin, open an existing image, or create a new 128x128 pixel canvas through the file menu.\nThen, select a tool in the toolbar and click on the canvas area to draw.\nBe sure to save your work frequently in the file menu!"));
         MenuItem aboutDD = new MenuItem("About");                     //saves to a user-specified location
-        aboutDD.setOnAction(e -> createPopup("About", "Paint 0.0.2 is an all-purpose art program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, who is a Computer Engineer and Comic Sans enthusiast."));
+        aboutDD.setOnAction(e -> createPopup("About", "Paint 0.0.2 is an all-purpose art program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, who is a Computer Engineer and Comic Sans enthusiast\n(but thankfully for the user, this is in Times New Roman)."));
         helpMenu.getItems().addAll(helpDD, aboutDD);
 
         this.getMenus().addAll(fileMenu, viewMenu, helpMenu); //adds all menus to menubar
@@ -60,10 +62,12 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.initOwner(PaintApplication.getStage());
         dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
         VBox dialogVbox = new VBox(20);
-        Font CS = new Font("Comic Sans MS", 12);  //Prof. Rosasco's favorite font. Talk about catering to the user's needs! :)
+        Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
         Text t =  new Text(bodyText);
         t.setFont(CS);
-        dialogVbox.getChildren().add(t);                //actually adds text to window
+        Button closeButton = new Button("Close");
+        closeButton.setOnAction(e->dialog.close());
+        dialogVbox.getChildren().addAll(t, closeButton);                //actually adds text to window
         Scene dialogScene = new Scene(dialogVbox, 600, 200);
         dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
