@@ -9,6 +9,8 @@ index name
 2     line
 3     picker
 4     dashed line
+5     square
+6     circle
 */
 package com.example.paint;
 
@@ -29,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MyToolbar extends ToolBar {
     private double[] initialTouch; //tracks initial mouse x and y when drawing
     private MyCanvas layer;                     //serves as a temporary overlay for previewing
-    private static final int numTools = 5;      //number of tools in tools array. Needs to be incremented to add tools
+    private static final int numTools = 7;      //number of tools in tools array. Needs to be incremented to add tools
     private static int selectedTool = -1;       //keeps track of which tool is selected. -1 for none selected
     private int sizeValue = 1;                  //keeps track of line width, shape outline size
     private ColorPicker cp;                     //allows user to choose colors for their shapes/lines
@@ -46,6 +48,8 @@ public class MyToolbar extends ToolBar {
         tools[2] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/line.png")), 16, 16, 2 );
         tools[3] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/picker.png")), 16, 16, 3 );
         tools[4] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/dashline.png")), 16, 16, 4 );
+        tools[5] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/square.png")), 16, 16, 5 );
+        tools[6] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/circle.png")), 16, 16, 6 );
         GridPane toolBox = new GridPane();
         for(int i=0; i<numTools; i++)
         {
@@ -134,10 +138,11 @@ public class MyToolbar extends ToolBar {
             }});
         canvas.addEventHandler(MouseEvent.MOUSE_PRESSED,
                 event -> {
-                    if(selectedTool!=3)
-                        canvas.setDirty(true);    //set canvas dirty unless just color picking
+                    GraphicsContext context = layer.getGraphicsContext2D();
+                    if(selectedTool!=3&&selectedTool!=-1)
+                        canvas.setDirty(true);    //set canvas dirty unless just color picking or panning
                     switch(selectedTool){
-                        case 1: case 0:{     //pencil tool, eraser tool (just sets stroke color to white)
+                        case 0: case 1:{     //pencil tool, eraser tool (just sets stroke color to white)
                             initDraw(canvas.getGraphicsContext2D());
                             if (selectedTool==1)
                                 canvas.getGraphicsContext2D().setStroke(Color.WHITE);
@@ -145,7 +150,7 @@ public class MyToolbar extends ToolBar {
                             initialTouch[0] = event.getX();
                             initialTouch[1] = event.getY();
                         }; break;
-                        case 2: case 4: {     //Line-drawing tool                                      //Try to delete previous overlay if possible
+                        case 2: case 4: case 5: case 6:{     //Line-drawing/shape tools (need preview) //Try to delete previous overlay if possible
                             try{
                                 layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
                                 root.getChildren().removeAll(canvas, layer);            //removes children from stackpane
@@ -158,9 +163,9 @@ public class MyToolbar extends ToolBar {
                             root.getChildren().addAll(canvas, layer);                   //adds canvas and overlay to a temporary stackpane to display both
                             root.setAlignment(Pos.TOP_LEFT);
                             PaintApplication.getScrollPane().setContent(root);
-                            GraphicsContext context = layer.getGraphicsContext2D();
+
                             initDraw(context);
-                            if(selectedTool==4){
+                            if(selectedTool==4){                                        //use dashed lines with dashed line tool, otherwise, don't
                                 context.setLineDashes(2*sizeValue);
                                 canvas.getGraphicsContext2D().setLineDashes(2*sizeValue);
                             }
@@ -185,43 +190,69 @@ public class MyToolbar extends ToolBar {
                     }});
         canvas.addEventHandler(MouseEvent.MOUSE_DRAGGED,
                 event -> {
+                    GraphicsContext context = layer.getGraphicsContext2D();
+                    context.setLineDashes(1);
+                    canvas.getGraphicsContext2D().setLineDashes(1);
                     switch(selectedTool) {
-                        case 1: canvas.getGraphicsContext2D().setStroke(Color.WHITE); case 0:{     //pencil tool, eraser tool (just sets stroke color to white)
+                        case 0:  case 1:{     //pencil tool, eraser tool (just sets stroke color to white)
                             initDraw(canvas.getGraphicsContext2D());
+                            if(selectedTool==1)
+                                canvas.getGraphicsContext2D().setStroke(Color.WHITE);
                             canvas.getGraphicsContext2D().strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());
                             initialTouch[0] = event.getX(); //draws a more continuous line by storing previous initialTouch info
                             initialTouch[1] = event.getY();
                         }; break;
                         case 4: case 2:{            //for lines, shapes, use preview tool
-                            GraphicsContext context = layer.getGraphicsContext2D();
                             initDraw(context);
-                            if(selectedTool==4){
+                            if(selectedTool==4){    //use dashed lines with dashed line tool, otherwise, don't
                                 context.setLineDashes(2*sizeValue);
                                 canvas.getGraphicsContext2D().setLineDashes(2*sizeValue);
                             }
-                            else{
-                                context.setLineDashes(1);
-                                canvas.getGraphicsContext2D().setLineDashes(1);
-                            }
                             context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
                             context.strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());} break;
+                        case 5: {                   //draws a square/rectangle
+                            initDraw(context);
+                            context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
+                            if(event.isShiftDown()) //if shift is down, always draw a square
+                                context.strokeRect(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getX()-initialTouch[0]);
+                            else                    //otherwise, freeform rectangle
+                                context.strokeRect(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getY()-initialTouch[1]);
+                        } break;
+                        case 6: {                   //draws an ellipse/circle
+                            initDraw(context);
+                            context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
+                            if(event.isShiftDown()) //if shift is down, always draw a circle
+                                context.strokeOval(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getX()-initialTouch[0]);
+                            else                    //otherwise, freeform oval
+                                context.strokeOval(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getY()-initialTouch[1]);
+                        } break;
                     }});
         canvas.addEventHandler(MouseEvent.MOUSE_RELEASED,
                 event -> {
+                    GraphicsContext context = canvas.getGraphicsContext2D();
                     switch (selectedTool) {
                         case 0: case 1: ; break;
                         case 2: case 4: {
-
-                            GraphicsContext context = canvas.getGraphicsContext2D();
                             initDraw(context);
-                            //context.clearRect(0, 0, PaintApplication.getCanvas().getWidth(), PaintApplication.getCanvas().getHeight());
                             context.strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());
-                            PaintApplication.getScrollPane().setContent(canvas);    //sets scrollpane's content back to just canvas
-                            try {
-                                layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
-                                root.getChildren().removeAll(canvas, layer);        //removes children from stackpane
-                            }
-                            catch(Exception e){}} break;
+                            endDraw(canvas);
+                            } break;
+                        case 5: {
+                            initDraw(context);
+                            if(event.isShiftDown()) //if shift is down, always draw a square
+                                context.strokeRect(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getX()-initialTouch[0]);
+                            else                    //otherwise, freeform rectangle
+                                context.strokeRect(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getY()-initialTouch[1]);
+                            endDraw(canvas);
+                        } break;
+                        case 6: {
+                            initDraw(context);
+                            if(event.isShiftDown()) //if shift is down, always draw a circle
+                                context.strokeOval(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getX()-initialTouch[0]);
+                            else                    //otherwise, freeform oval
+                                context.strokeOval(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getY()-initialTouch[1]);
+                            endDraw(canvas);
+                        } break;
                     }});
     }
     public void initDraw(GraphicsContext gc){  //sets properties of the current graphicscontext so that it doesn't have to be done every single time we want to draw something
@@ -229,6 +260,13 @@ public class MyToolbar extends ToolBar {
         gc.setFill(selectedColor);      //primes tool with proper color/size
         gc.setStroke(selectedColor);
         gc.setLineWidth(sizeValue);
-
+    }
+    public void endDraw(MyCanvas canvas){      //handles end of preview-draw sequence
+        PaintApplication.getScrollPane().setContent(canvas);    //sets scrollpane's content back to just canvas
+        try {
+            layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
+            root.getChildren().removeAll(canvas, layer);        //removes children from stackpane
+        }
+        catch(Exception e){}
     }
 }

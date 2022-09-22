@@ -41,6 +41,8 @@ public class PaintApplication extends Application {
     private static MyToolbar toolbar;
     private static ScrollPane sp;
     private static TabPane tabpane;
+    private static int tabsClosed;
+    private static boolean closing = false;
     @Override
     public void start(Stage stage) throws IOException {
         //This section sets up the GUI and menu.
@@ -51,6 +53,7 @@ public class PaintApplication extends Application {
         //VBox canvasBox = new VBox();
         //canvasBox.getChildren().add(canvas);           //Not really used now but may be used to contain other tools in the future
         this.tabpane = new TabPane(); //for storing different tabs (canvases)
+        tabpane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         this.sp = new ScrollPane();   //creates a new scrollpane, containing the canvas. This allows image to be scrolled through
         sp.setVisible(true);
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
@@ -119,6 +122,11 @@ public class PaintApplication extends Application {
     public static MyToolbar getToolbar() { return toolbar;}
     public static ScrollPane getScrollPane() {return sp;}
     public static TabPane getTabPane() {return tabpane;}
+    public static void incrementTabsClosed() {++tabsClosed;     //increment tabsClosed to keep track of tabs closed for smart save on close
+        if(((tabsClosed)>=tabpane.getTabs().size())&&closing){
+            Platform.exit();                                    //exit if all tabs have been dealt with
+        }
+    }
 
     public static File chooseFile(String title, Boolean saving) {    //opens a file chooser dialogue in stage. Used for save as and open
         File file;
@@ -201,20 +209,22 @@ public class PaintApplication extends Application {
             updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name with new name
         }}
     public static void saveAll(){
-        for (Tab tabs:
+        tabsClosed = 0;
+        for (Tab tabs:                  //iterates through all tabs in the tabpane
                 tabpane.getTabs()) {
-            tabpane.getSelectionModel().select(tabs);
-            currentCanvas = ((MyTab)tabs).getCurrentCanvas();
-            /*if (currentCanvas.getDirty()==false){
-                Alert a = new Alert(Alert.AlertType.CONFIRMATION, "Save " + ((MyTab) tabs).getTabName() + "?", ButtonType.YES, ButtonType.CLOSE);
-                a.show();
-            }*/
-            save(((MyTab)tabs).getCurrentCanvas().getLastSaved());
-            //tabpane.getTabs().remove(tabs);
+            tabpane.getSelectionModel().select(tabs);           //selects each as it goes along in order
+            currentCanvas = ((MyTab)tabs).getCurrentCanvas();   //gets canvas assigned to each to perform save operation correctly
+            if (currentCanvas.getDirty()==true){
+                ((MyTab)tabs).savePrompt(false); //asks user about each file
+            }
+            else {
+                tabsClosed++;           //increments tabsClosed even for autosaves to avoid inaccurate count
+            }
         }
     }
     public static void newImage() { //sets up a blank canvas
         currentCanvas = new MyCanvas(128, 128);    //creates a canvas for loading images, drawing on
+        currentCanvas.setDirty(true);      //this is considered "dirty" for saving purposes
         currentCanvas.setWidth(128);       //default 128x128, like in regular MS Paint
         currentCanvas.setHeight(128);
         GraphicsContext gc = currentCanvas.getGraphicsContext2D();
@@ -264,39 +274,48 @@ public class PaintApplication extends Application {
         tab.setText(tab.getTabName());
     }
     public void exitProgramWarning(WindowEvent event){
-        event.consume();                                                //prevents program from closing immediately
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle("Warning: Unsaved Work");
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
-        VBox dialogVbox = new VBox(20);
-        Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
-        Text t =  new Text("You have one or more unsaved canvases. Would you like to save your work before exiting?");
-        t.setFont(CS);
-        Button saveAllButton = new Button("Save"); //Gives user options for saving, not saving, or cancelling the operation
-        saveAllButton.setOnAction(e->{
-            dialog.close();
-            saveAll();
-            Platform.exit();
-        });
-        Button closeButton = new Button("Don't Save");  //close program without saving
-        closeButton.setOnAction(e->{
-            dialog.close();
-            Platform.exit();
-        });
-        Button cancelButton = new Button("Cancel");     //just get rid of the window
-        cancelButton.setOnAction(e->{
-            dialog.close();
-            event.consume();
-        });
-        HBox options = new HBox();
-        options.getChildren().addAll(saveAllButton, closeButton, cancelButton);
-        dialogVbox.getChildren().addAll(t, options);                //actually adds text, button to window
-        Scene dialogScene = new Scene(dialogVbox, 450, 60);
-        dialog.setScene(dialogScene);                   //displays window to user
-        dialog.show();
-        dialog.setResizable(false);                     //don't let user resize; this is just an alert window
+        boolean allClean = true;
+        for (Tab tabs:
+             tabpane.getTabs()) {
+            if(((MyTab)tabs).getCurrentCanvas().getDirty()){            //if any canvases are dirty, set boolean false
+                allClean = false;
+                break;}}
+        if(!allClean){                                                  //if all canvases are clean, skip all of the following
+            event.consume();                                                //prevents program from closing immediately
+            Stage dialog = new Stage();                                     //creates a new window
+            dialog.setTitle("Unsaved Work");
+            dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
+            dialog.initOwner(PaintApplication.getStage());
+            dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+            VBox dialogVbox = new VBox(20);
+            Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
+            Text t =  new Text("You have one or more unsaved canvases. Would you like to save your work?");
+            t.setFont(CS);
+            Button saveAllButton = new Button("Save"); //Gives user options for saving, not saving, or cancelling the operation
+            saveAllButton.setOnAction(e->{
+                dialog.close();
+                this.closing = true;
+                saveAll();
+            });
+            Button closeButton = new Button("Don't Save");  //close program without saving
+            closeButton.setOnAction(e->{
+                dialog.close();
+                Platform.exit();
+            });
+            Button cancelButton = new Button("Cancel");     //just get rid of the window
+            cancelButton.setOnAction(e->{
+                dialog.close();
+                event.consume();
+            });
+            HBox options = new HBox();
+            options.getChildren().addAll(saveAllButton, closeButton, cancelButton);
+            dialogVbox.getChildren().addAll(t, options);                //actually adds text, button to window
+            Scene dialogScene = new Scene(dialogVbox, 450, 60);
+            dialog.setScene(dialogScene);                   //displays window to user
+            dialog.show();
+            dialog.setResizable(false);                     //don't let user resize; this is just an alert window
+        }
+
     }
 
 }

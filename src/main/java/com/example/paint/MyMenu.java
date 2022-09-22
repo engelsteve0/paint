@@ -30,6 +30,8 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         saveDD.setOnAction(e -> PaintApplication.save(PaintApplication.getCanvas().getLastSaved()));
         MenuItem saveAsDD = new MenuItem("Save As");        //saves to a user-specified location
         saveAsDD.setOnAction(e -> PaintApplication.saveAs());
+        MenuItem saveAllDD = new MenuItem("Save All");        //asks user about saving all files
+        saveAllDD.setOnAction(e -> PaintApplication.saveAll());
         SeparatorMenuItem s2 = new SeparatorMenuItem();
         MenuItem exitDD = new MenuItem("Exit");             //exits the application
         exitDD.setOnAction(e -> {
@@ -37,7 +39,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
             window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
         });
 
-        fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, s2, exitDD);    //adds controls to fileMenu
+        fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, saveAllDD, s2, exitDD);    //adds controls to fileMenu
 
         Menu viewMenu = new Menu("View");
         MenuItem fullScreenDD = new MenuItem("Toggle Full Screen (F11)");        //saves to a user-specified location
