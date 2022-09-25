@@ -11,6 +11,7 @@ public class MyCanvas extends Canvas implements Cloneable{
     private boolean dirty;
     public MyCanvas(int w, int h){  //calls Canvas's constructor with width and height
         super(w, h);
+        this.setStyle("-fx-background-color: white"); //set background manually
         dirty = false;              //fresh file, no changes have been made
     }
     public File getLastSaved() { return lastSaved;} //accessor/mutator methods for getting and setting the file that was last saved

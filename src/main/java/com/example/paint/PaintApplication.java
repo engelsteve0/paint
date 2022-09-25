@@ -4,6 +4,7 @@
 //This file also controls various functions which relate to the program as a whole (as opposed to particular files/canvases)
 package com.example.paint;
 
+import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import javafx.application.Application;
@@ -14,16 +15,14 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -37,11 +36,11 @@ import javafx.stage.WindowEvent;
 
 public class PaintApplication extends Application {
     private static Stage stage; //ensures that the stage can be referenced in functions
-    private static MyCanvas currentCanvas;
-    private static MyToolbar toolbar;
-    private static ScrollPane sp;
-    private static TabPane tabpane;
-    private static int tabsClosed;
+    private static MyCanvas currentCanvas; //references the canvas currently shown on screen
+    private static MyToolbar toolbar;      //holds the tools- just below the file menu
+    private static ScrollPane sp;          //holds the canvas- allows it to be scrollable
+    private static TabPane tabpane;        //holds the tabs, each of which have a canvas associated with them
+    private static int tabsClosed;         //keeps track of number of tabs closed- for smart save on close
     private static boolean closing = false;
     @Override
     public void start(Stage stage) throws IOException {
@@ -184,13 +183,20 @@ public class PaintApplication extends Application {
                     currentCanvas.setScaleY(1);
                     WritableImage writableImage = new WritableImage((int) currentCanvas.getWidth(), (int) currentCanvas.getHeight());
                     currentCanvas.snapshot(null, writableImage);
-                    RenderedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
+                    BufferedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
                     String extension = "";
                     int i = saveFile.getName().lastIndexOf('.');
                     if (i > 0) {
                         extension = saveFile.getName().substring(i+1);
                     }
-                    ImageIO.write(renderedImage, "png", saveFile); //writes file with png writer regardless of format for now... jpg was not working
+                    switch (extension){
+                        case "jpg": case "bmp": //for a few formats, transparency cannot be saved. This removes the alpha (TYPE_INT_RGB, not ARGB) to fix that
+                            BufferedImage newBufferedImage = new BufferedImage(renderedImage.getWidth(), renderedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+                            newBufferedImage.createGraphics().drawImage(renderedImage, 0, 0, java.awt.Color.WHITE, null);
+                            renderedImage = newBufferedImage;
+                            break;
+                    }
+                    ImageIO.write(renderedImage, extension, saveFile); //writes file with png writer regardless of format for now... jpg was not working
                     currentCanvas.setScaleX(ogx);
                     currentCanvas.setScaleY(ogy);  //sets canvas scale to its original size
                     currentCanvas.setDirty(false); //canvas is now considered clean (saved)
@@ -270,7 +276,7 @@ public class PaintApplication extends Application {
         zoom();                                     //gets zoom controls working again
         updateTab(tab);
     }
-    public static void updateTab(MyTab tab){
+    public static void updateTab(MyTab tab){        //updates tab's name with new tab name
         tab.setText(tab.getTabName());
     }
     public void exitProgramWarning(WindowEvent event){
@@ -291,7 +297,7 @@ public class PaintApplication extends Application {
             Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
             Text t =  new Text("You have one or more unsaved canvases. Would you like to save your work?");
             t.setFont(CS);
-            Button saveAllButton = new Button("Save"); //Gives user options for saving, not saving, or cancelling the operation
+            Button saveAllButton = new Button("Save");     //Gives user options for saving, not saving, or cancelling the operation
             saveAllButton.setOnAction(e->{
                 dialog.close();
                 this.closing = true;

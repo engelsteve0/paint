@@ -41,6 +41,7 @@ public class MyToolbar extends ToolBar {
     public MyToolbar(){ //calls Toolbar's constructor with no args
         super();
         this.initialTouch = new double[2];
+
         //starting with the bottom of the hierarchy up (tool Buttons -> toolBox as a GridPane -> VBox containing the tools and title -> overall toolbar
         this.tools = new ImageButton[numTools];      //uses an array to store tool buttons
         tools[0] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/pencil.png")), 16, 16, 0 );
