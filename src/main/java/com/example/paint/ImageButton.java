@@ -4,7 +4,6 @@
 //It also communicates to MyToolbar which tool has been selected to determine mouse functionality on the canvas.
 package com.example.paint;
 
-import javafx.scene.control.Button;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;

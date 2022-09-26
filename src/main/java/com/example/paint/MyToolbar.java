@@ -26,7 +26,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.util.Pair;
 import java.util.concurrent.atomic.AtomicBoolean;
 public class MyToolbar extends ToolBar {
     private double[] initialTouch; //tracks initial mouse x and y when drawing
@@ -139,9 +138,13 @@ public class MyToolbar extends ToolBar {
             }});
         canvas.addEventHandler(MouseEvent.MOUSE_PRESSED,
                 event -> {
+
                     GraphicsContext context = layer.getGraphicsContext2D();
-                    if(selectedTool!=3&&selectedTool!=-1)
+                    if(selectedTool!=3&&selectedTool!=-1){
                         canvas.setDirty(true);    //set canvas dirty unless just color picking or panning
+                        //canvas.updateUndoRedoStack();       //updates undo stack when feature drawing is initiated
+                    }
+
                     switch(selectedTool){
                         case 0: case 1:{     //pencil tool, eraser tool (just sets stroke color to white)
                             initDraw(canvas.getGraphicsContext2D());
@@ -254,7 +257,11 @@ public class MyToolbar extends ToolBar {
                                 context.strokeOval(initialTouch[0], initialTouch[1], event.getX()-initialTouch[0], event.getY()-initialTouch[1]);
                             endDraw(canvas);
                         } break;
-                    }});
+                    }
+                    if(selectedTool!=3&&selectedTool!=-1){
+                        canvas.updateUndoStack();       //updates undo stack when feature drawing is initiated
+                    }
+        });
     }
     public void initDraw(GraphicsContext gc){  //sets properties of the current graphicscontext so that it doesn't have to be done every single time we want to draw something
         selectedColor = cp.getValue();  //updates color based on colorpicker

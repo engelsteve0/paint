@@ -5,18 +5,12 @@
 package com.example.paint;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -41,6 +35,8 @@ public class PaintApplication extends Application {
     private static ScrollPane sp;          //holds the canvas- allows it to be scrollable
     private static TabPane tabpane;        //holds the tabs, each of which have a canvas associated with them
     private static int tabsClosed;         //keeps track of number of tabs closed- for smart save on close
+    private static UndoRedoButton undoButton;
+    private static UndoRedoButton redoButton;
     private static boolean closing = false;
     @Override
     public void start(Stage stage) throws IOException {
@@ -79,9 +75,12 @@ public class PaintApplication extends Application {
                 }
         );
         MyMenu menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
+        this.undoButton = new UndoRedoButton(true, new Image(PaintApplication.class.getResourceAsStream("/tools/undo.png")), 16, 16);
+        this.redoButton = new UndoRedoButton(false, new Image(PaintApplication.class.getResourceAsStream("/tools/redo.png")), 16, 16);
+        HBox menuBox = new HBox(menu, undoButton, redoButton); //creates undo and redo buttons, adds to an hbox with rest of menu
         this.toolbar = new MyToolbar(); //see MyToolbar.java (extends the Toolbar class)
         VBox top = new VBox();
-        top.getChildren().addAll(menu, toolbar, tabpane); //creates a vertical box for the menu, toolbar, and tabpane, allowing them all to rest at the top
+        top.getChildren().addAll(menuBox, toolbar, tabpane); //creates a vertical box for the menu, toolbar, and tabpane, allowing them all to rest at the top
         layout.setTop(top);
         layout.setAlignment(top, Pos.TOP_LEFT);
 
@@ -105,6 +104,12 @@ public class PaintApplication extends Application {
                 else if (event.isControlDown() && (event.getCode() == KeyCode.N)) { //implements new file with control n
                     newImage();
                 }
+                else if (event.isControlDown() && (event.getCode() == KeyCode.Z)) { //implements undo with control z
+                    undo();
+                }
+                else if (event.isControlDown() && (event.getCode() == KeyCode.Y)) { //implements redo file with control y
+                    redo();
+                }
                 else if ((event.getCode() == KeyCode.F11)) { //implements fullscreen toggle
                     getStage().setFullScreen(!PaintApplication.getStage().isFullScreen());
                 }
@@ -125,6 +130,12 @@ public class PaintApplication extends Application {
         if(((tabsClosed)>=tabpane.getTabs().size())&&closing){
             Platform.exit();                                    //exit if all tabs have been dealt with
         }
+    }
+    public static void undo(){      //used to undo/redo (for functions outside this class)
+        undoButton.undo();
+    }
+    public static void redo(){
+        redoButton.redo();
     }
 
     public static File chooseFile(String title, Boolean saving) {    //opens a file chooser dialogue in stage. Used for save as and open
@@ -164,6 +175,7 @@ public class PaintApplication extends Application {
             sp.setHmin(0);
             sp.setVmin(0);
             createTab();
+            currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
         } catch (Exception e) {
             System.out.println("Could not open file.");
         }
@@ -247,6 +259,7 @@ public class PaintApplication extends Application {
         currentCanvas.setScaleX(1);            //sets canvas scale to default to avoid losing image
         currentCanvas.setScaleY(1);
         createTab();                           //creates a new tab with this canvas
+        currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
     }
     public static void zoom() { //handles zooming/scaling with mouse
         currentCanvas.setOnScroll(

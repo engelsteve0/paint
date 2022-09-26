@@ -3,7 +3,7 @@
 //The MyTab class is a tab which stores extra information, such as the canvas assigned to it, as well as overriding the exit method to warn user to save their work
 package com.example.paint;
 
-import javafx.application.Platform;
+
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
@@ -15,15 +15,12 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.stage.Window;
-
-import java.util.Iterator;
-import java.util.function.Consumer;
 
 
 
 public class MyTab extends Tab{
     private MyCanvas currentCanvas;         //stores reference to canvas associated with this tab
+
     public MyTab(MyCanvas canvas){
         super();
         setCurrentCanvas(canvas);           //associates canvas given in constructor with this tab
@@ -37,6 +34,7 @@ public class MyTab extends Tab{
     public void setCurrentCanvas(MyCanvas canvas){  //setter/getter methods for canvas associated with this tab
         this.currentCanvas = canvas;
     }
+
     public MyCanvas getCurrentCanvas(){
         return currentCanvas;
     }
