@@ -27,6 +27,9 @@ public class ImageButton extends ToggleButton {
             if(PaintApplication.getToolbar().getSelectedTool()!=buttonId) {     //if the previous selection was different than this, set this as the new buttonId selected
                 PaintApplication.getToolbar().setSelectedTool(buttonId);
                 PaintApplication.getScrollPane().setPannable(false);             //stop panning
+                if(buttonId==7){                                                 //if this is the polygon button, prompt user for number of sides
+                    PaintApplication.getToolbar().promptNumSides();
+                }
             }
             else {
                 PaintApplication.getToolbar().setSelectedTool(-1);              //otherwise, deselect

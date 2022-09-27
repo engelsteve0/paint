@@ -62,7 +62,11 @@ public class PaintApplication extends Application {
         tabpane.getSelectionModel().selectedItemProperty().addListener(         //if user has switched tab,
                 (ov, t, t1) -> {
                     currentCanvas = ((MyTab) t1).getCurrentCanvas();            //change canvas to that tab's canvas
-                    sp.setContent(currentCanvas);
+                    StackPane currentRoot = ((MyTab) t1).getCurrentRoot();
+                    if(toolbar.getSelectedTool()==8&&currentRoot.getChildren().contains(currentCanvas)) //if using select tool, maintain selection and add full stackpane instead of just canvas
+                        sp.setContent(currentRoot);
+                    else    //otherwise, just load canvas like normal.
+                        sp.setContent(currentCanvas);
                     if(currentCanvas.getLastSaved()!=null){                     //Set window title to reflect newly selected tab's contents
                         stage.setTitle("Paint: " + currentCanvas.getLastSaved());}
                     else{

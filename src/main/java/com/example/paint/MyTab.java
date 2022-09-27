@@ -5,10 +5,12 @@ package com.example.paint;
 
 
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -20,10 +22,16 @@ import javafx.stage.StageStyle;
 
 public class MyTab extends Tab{
     private MyCanvas currentCanvas;         //stores reference to canvas associated with this tab
-
+    private Canvas layer;                   //stores preview/selection information related to this tab
+    private StackPane root;                 //stackpane for preview/selection layer overlay
+    boolean hasSelection;                   //used to keep track of if this tab's canvas/layer has a selection
+    Image selectionImage;                   //stores snapshot of what was selected
     public MyTab(MyCanvas canvas){
         super();
         setCurrentCanvas(canvas);           //associates canvas given in constructor with this tab
+        this.layer = new Canvas((int) PaintApplication.getCanvas().getWidth(), (int) PaintApplication.getCanvas().getHeight());
+        this.root = new StackPane(); //is eventually used as an overlay for previewing changes
+        this.hasSelection = false;
         setOnCloseRequest(e->{
             if (currentCanvas.getDirty()){      //only calls smart save if canvas has changes since last save
                 e.consume();                    //sets up smart/aware save
@@ -38,6 +46,16 @@ public class MyTab extends Tab{
     public MyCanvas getCurrentCanvas(){
         return currentCanvas;
     }
+    public Canvas getCurrentLayer(){
+        return layer;
+    }
+    public StackPane getCurrentRoot(){
+        return root;
+    }
+    public void setSelection(boolean selection, Image selectionImage) {hasSelection = selection; this.selectionImage = selectionImage;}
+    public void setSelection(boolean selection){hasSelection = selection;}
+    public Image getSelectionImage(){return selectionImage;}
+    public boolean getSelection() {return hasSelection;}
     public String getTabName(){                     //returns name of this tab (based on file without path)
         String tabName = "";
         try{
