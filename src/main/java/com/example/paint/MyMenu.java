@@ -56,25 +56,44 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
             PaintApplication.redo();
         });
         SeparatorMenuItem s3 = new SeparatorMenuItem();
+        MenuItem cutDD = new MenuItem("Cut (Ctrl + X)");     //cuts an image if selected
+        cutDD.setOnAction(e -> {
+            if(((MyTab)(PaintApplication.getTabPane().getSelectionModel().getSelectedItem())).getSelection()>=1) //if an area is currently selected
+                PaintApplication.getToolbar().cutImage();
+        });
+        MenuItem copyDD = new MenuItem("Copy (Ctrl + C)");    //copies an image if selected
+        copyDD.setOnAction(e -> {
+            if(((MyTab)(PaintApplication.getTabPane().getSelectionModel().getSelectedItem())).getSelection()>=1) //if an area is currently selected
+                PaintApplication.getToolbar().copyImage();
+        });
+        MenuItem pasteDD = new MenuItem("Paste (Ctrl + V)");    //pastes image into tab if possible
+        pasteDD.setOnAction(e -> {
+            try{
+                PaintApplication.getToolbar().pasteImage();
+            }
+            catch(Exception f){}
+
+        });
+        SeparatorMenuItem s4 = new SeparatorMenuItem();
         MenuItem resizeDD = new MenuItem("Resize Canvas");    //opens window letting user resize canvas
         resizeDD.setOnAction(e -> {
             createResizePopup();
         });
-        SeparatorMenuItem s4 = new SeparatorMenuItem();
+
         MenuItem clearCanvasDD = new MenuItem("Clear Canvas");    //opens window letting user clear
         clearCanvasDD.setOnAction(e -> {
             createClearCanvasPopup();
 
         });
-        editMenu.getItems().addAll(undoDD, redoDD, s3, resizeDD, s4, clearCanvasDD);
+        editMenu.getItems().addAll(undoDD, redoDD, s3, cutDD, copyDD, pasteDD, s4, resizeDD, clearCanvasDD);
         Menu helpMenu = new Menu("Help");
         MenuItem helpDD = new MenuItem("Help");                     //saves to a user-specified location
         helpDD.setOnAction(e -> createPopup("Help", "Hello and welcome to Paint!\nTo begin, open an existing image, or create a new 128x128 pixel canvas through the file menu.\nThen, select a tool in the toolbar and click on the canvas area to draw.\nBe sure to save your work frequently in the file menu!"));
         MenuItem aboutDD = new MenuItem("About");                     //saves to a user-specified location
-        aboutDD.setOnAction(e -> createPopup("About", "Paint 0.0.4 is an all-purpose art program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, who is a Computer Engineer and Comic Sans enthusiast\n(but thankfully for the user, this is in Times New Roman)."));
+        aboutDD.setOnAction(e -> createPopup("About", "Paint 0.0.8 is an all-purpose art program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, who is a Computer Engineer and Comic Sans enthusiast\n(but thankfully for the user, this is in Times New Roman)."));
         helpMenu.getItems().addAll(helpDD, aboutDD);
 
-        this.getMenus().addAll(fileMenu, viewMenu, editMenu, helpMenu); //adds all menus to menubar
+        this.getMenus().addAll(fileMenu, editMenu, viewMenu, helpMenu); //adds all menus to menubar
 
     }
 

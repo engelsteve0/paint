@@ -19,6 +19,7 @@ package com.example.paint;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
@@ -26,6 +27,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -33,6 +36,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Translate;
@@ -52,6 +56,8 @@ public class MyToolbar extends ToolBar {
     private Color selectedColor;                //keeps track of which color was picked
     private ImageButton[] tools;                //stores the tools themselves
     private int polygonSides;                   //stores number of sides for regular polygon
+    private Clipboard clipboard = Clipboard.getSystemClipboard();
+    private ClipboardContent clipboardContent = new ClipboardContent();  //stores copied/cut images for pasting
     public MyToolbar(){ //calls Toolbar's constructor with no args
         super();
         this.initialTouch = new double[2];
@@ -112,7 +118,6 @@ public class MyToolbar extends ToolBar {
         this.getItems().addAll(toolVBox, s1, sizeSelector, s2, cp, s3);         //adds items to toolbar
         cp.setOnAction((EventHandler) t -> selectedColor = cp.getValue());
 
-
         setupTools();
 
     }
@@ -158,50 +163,57 @@ public class MyToolbar extends ToolBar {
                 event-> {
                     GraphicsContext context = layer.getGraphicsContext2D();
                     if(selectedTool==8) {           //rectselect
-                        layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
-                        layer.setWidth(canvas.getWidth());                          //resizes overlay to fit canvas as necessary
-                        layer.setHeight(canvas.getHeight());
-                        layer.setScaleX(canvas.getScaleX());
-                        layer.setScaleY(canvas.getScaleY());
-                        initDraw(context);
-                        context.setLineDashes(2);   //uses dashed lines for selection box
-                        initialTouch[0] = event.getX();
-                        initialTouch[1] = event.getY();
+                        if(thisTab.getSelection()==1&&(event.getX()>=thisTab.getImageSelection().getx1())&&(event.getX()<=thisTab.getImageSelection().getx1()+thisTab.getImageSelection().getw())&&(event.getY()>=thisTab.getImageSelection().gety1())&&(event.getX()<=thisTab.getImageSelection().gety1()+thisTab.getImageSelection().geth())){  //if we've selected something but haven't clicked on it yet, register state change to clicked on
+                            thisTab.setSelection(2);
+                        }
+                        else{
+                            layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
+                            layer.setWidth(canvas.getWidth());                          //resizes overlay to fit canvas as necessary
+                            layer.setHeight(canvas.getHeight());
+                            layer.setScaleX(canvas.getScaleX());
+                            layer.setScaleY(canvas.getScaleY());
+                            initDraw(context);
+                            context.setLineDashes(2);   //uses dashed lines for selection box
+                            initialTouch[0] = event.getX();
+                            initialTouch[1] = event.getY();
+                        }
                     }
                     else{           //if using another tool, end layer/selection
                         endDraw(canvas);
-                        thisTab.setSelection(false);
+                        thisTab.setSelection(0);
                     }
-
-
                 });
         layer.addEventHandler(MouseEvent.MOUSE_DRAGGED,
                 event -> {
                     GraphicsContext context = layer.getGraphicsContext2D();
                     if(selectedTool==8) {
                         initDraw(context);
-
-                        context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
-                        double startx = initialTouch[0];        //handles drawing to areas other than to bottom right
-                        double starty = initialTouch[1];
-                        double endx = event.getX();
-                        double endy = event.getY();
-                        if(endx-startx<0){                      //if in quadrants II or III, flip x
-                            startx = event.getX();
-                            endx = initialTouch[0];
+                        if(thisTab.getSelection()==2) {//drag mode
+                            context.clearRect(0, 0, layer.getWidth(), layer.getHeight());   //clear layer, move selected portion around
+                            layer.getGraphicsContext2D().drawImage(thisTab.getSelectionImage(), event.getX(), event.getY(), thisTab.getSelectionImage().getWidth(), thisTab.getSelectionImage().getHeight()); //actually draws image
                         }
-                        if(endy-starty<0){                      //if in quadrants I or II, flip y
-                            starty = event.getY();
-                            endy = initialTouch[1];
-                        }
+                        else{
+                            context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
+                            double startx = initialTouch[0];        //handles drawing to areas other than to bottom right
+                            double starty = initialTouch[1];
+                            double endx = event.getX();
+                            double endy = event.getY();
+                            if(endx-startx<0){                      //if in quadrants II or III, flip x
+                                startx = event.getX();
+                                endx = initialTouch[0];
+                            }
+                            if(endy-starty<0){                      //if in quadrants I or II, flip y
+                                starty = event.getY();
+                                endy = initialTouch[1];
+                            }
 
-                        context.setLineDashes(2);
-                        context.setLineWidth(1);
-                        if(event.isShiftDown()) //if shift is down, always draw a square
+                            context.setLineDashes(2);
+                            context.setLineWidth(1);
+                            if(event.isShiftDown()) //if shift is down, always draw a square
                                 context.strokeRect(startx, starty, endx-startx, endx-startx);
-                        else                    //otherwise, freeform rectangle
+                            else                    //otherwise, freeform rectangle
                                 context.strokeRect(startx, starty, endx-startx, endy-starty);
-
+                        }
                     }
                 });
         layer.addEventHandler(MouseEvent.MOUSE_RELEASED,
@@ -209,7 +221,11 @@ public class MyToolbar extends ToolBar {
                     GraphicsContext context = layer.getGraphicsContext2D();
                     if(selectedTool==8) {
                         initDraw(context);
-
+                        if(thisTab.getSelection()==2){ //if in dragging mode, "plop" the image down onto the canvas
+                            canvas.getGraphicsContext2D().drawImage(thisTab.getSelectionImage(), event.getX(), event.getY(), thisTab.getSelectionImage().getWidth(), thisTab.getSelectionImage().getHeight()); //actually draws image
+                            thisTab.setSelection(0);    //go back to base unselected state
+                            canvas.updateUndoStack();   //this is an edit, let undo know that
+                        }
                         context.clearRect(0, 0, layer.getWidth(), layer.getHeight());
                         double startx = initialTouch[0];        //handles drawing to areas other than to bottom right
                         double starty = initialTouch[1];
@@ -244,13 +260,15 @@ public class MyToolbar extends ToolBar {
                             double ogy = canvas.getScaleY();
                             canvas.setScaleX(1);            //briefly sets canvas scale to default to avoid saving errors
                             canvas.setScaleY(1);
+                            Rectangle2D bounds = new Rectangle2D(startx, starty, width, height);
                             WritableImage writableImage = new WritableImage((int) width, (int) height);
                             SnapshotParameters parameter = new SnapshotParameters();
-                            parameter.setTransform(new Translate(startx, starty));
+                            parameter.setViewport(bounds);
                             canvas.snapshot(parameter, writableImage);
                             canvas.setScaleX(ogx);            //briefly sets canvas scale to default to avoid saving errors
                             canvas.setScaleY(ogy);
-                            thisTab.setSelection(true, writableImage);
+                            thisTab.setSelection(1, writableImage); //stores this image in an image object associated with tab
+                            thisTab.getImageSelection().setSelectionCoordinates(startx, starty, width, height); //stores coordinates associated with selection
                         }
                         catch(Exception e){}
                     }
@@ -311,22 +329,11 @@ public class MyToolbar extends ToolBar {
                             canvas.setScaleY(ogy);
                         } break;
                         case 8: {                                       //if selecting, switch to drawing on layer
-                            if(!root.getChildren().contains(layer)) {
-                            root.getChildren().removeAll(canvas, layer);            //removes children from stackpane
-                                root.getChildren().addAll(canvas, layer);                   //adds canvas and overlay to a temporary stackpane to display both
-                                root.setAlignment(Pos.TOP_LEFT);
-                                PaintApplication.getScrollPane().setContent(root);
-                            }
-                            layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
-                            layer.setWidth(canvas.getWidth());                          //resizes overlay to fit canvas as necessary
-                            layer.setHeight(canvas.getHeight());
-                            layer.setScaleX(canvas.getScaleX());
-                            layer.setScaleY(canvas.getScaleY());
+                            readyLayer();
                             initDraw(context);
                             context.setLineDashes(2);
                             initialTouch[0] = event.getX();
                             initialTouch[1] = event.getY();}
-
                     }});
         canvas.addEventHandler(MouseEvent.MOUSE_DRAGGED,
                 event -> {
@@ -366,11 +373,7 @@ public class MyToolbar extends ToolBar {
                                 starty = event.getY();
                                 endy = initialTouch[1];
                             }
-                            if(selectedTool==5/*||selectedTool==8*/){ //square/rect or selectrect
-                                //if(selectedTool==8) {
-                                //    context.setLineDashes(2);
-                                //    context.setLineWidth(1);
-                               // }
+                            if(selectedTool==5){ //square/rect or selectrect
                                 if(event.isShiftDown()) //if shift is down, always draw a square
                                     context.strokeRect(startx, starty, endx-startx, endx-startx);
                                 else                    //otherwise, freeform rectangle
@@ -507,5 +510,47 @@ public class MyToolbar extends ToolBar {
         Scene dialogScene = new Scene(dialogVbox, 600, 120);
         dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
+    }
+    public void readyLayer(){   //gets layer ready for pasting from another tab, initializing select operation
+        MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
+        MyCanvas canvas = thisTab.getCurrentCanvas();
+        Canvas layer = thisTab.getCurrentLayer();
+        StackPane root = thisTab.getCurrentRoot();
+        if(!root.getChildren().contains(layer)) {
+            root.getChildren().removeAll(canvas, layer);            //removes children from stackpane
+            root.getChildren().addAll(canvas, layer);                   //adds canvas and overlay to a temporary stackpane to display both
+            root.setAlignment(Pos.TOP_LEFT);
+            PaintApplication.getScrollPane().setContent(root);
+        }
+        layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
+        layer.setWidth(canvas.getWidth());                          //resizes overlay to fit canvas as necessary
+        layer.setHeight(canvas.getHeight());
+        layer.setScaleX(canvas.getScaleX());
+        layer.setScaleY(canvas.getScaleY());
+    }
+    public void copyImage(){    //copies image into system clipboard
+        this.clipboardContent.putImage(((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getSelectionImage());
+    }
+    public void cutImage(){
+        MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
+        Canvas layer = thisTab.getCurrentLayer();
+        MyCanvas canvas = thisTab.getCurrentCanvas();
+        layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.setFill(Color.WHITE);                                        //fills in canvas with white (slightly distinct from gray background)
+        gc.fillRect(thisTab.getImageSelection().getx1(), thisTab.getImageSelection().gety1(), thisTab.getImageSelection().getx1()+thisTab.getImageSelection().getw(), thisTab.getImageSelection().gety1()+thisTab.getImageSelection().geth());               //sets gc to canvas size
+        copyImage();            //first, copy the image. Then, leave blank rectangle behind on canvas and deselect
+        thisTab.setSelection(0);    //set selection back to 0
+        ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas().updateUndoStack();
+
+    }
+    public void pasteImage(){   //pastes image onto canvas near user's current x, y
+        MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
+        Image image = this.clipboardContent.getImage();
+        readyLayer();
+        thisTab.getCurrentLayer().getGraphicsContext2D().drawImage(image, 0, 0, image.getWidth(), image.getHeight()); //actually draws image
+        if(selectedTool==8)
+            thisTab.setSelection(2, image);                      //sets state to let user move this around canvas
+        thisTab.getCurrentCanvas().updateUndoStack(); //lets undo know a change has been made
     }
 }

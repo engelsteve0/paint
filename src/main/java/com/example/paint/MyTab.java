@@ -24,14 +24,14 @@ public class MyTab extends Tab{
     private MyCanvas currentCanvas;         //stores reference to canvas associated with this tab
     private Canvas layer;                   //stores preview/selection information related to this tab
     private StackPane root;                 //stackpane for preview/selection layer overlay
-    boolean hasSelection;                   //used to keep track of if this tab's canvas/layer has a selection
-    Image selectionImage;                   //stores snapshot of what was selected
+    private ImageSelection imageSelection;
     public MyTab(MyCanvas canvas){
         super();
         setCurrentCanvas(canvas);           //associates canvas given in constructor with this tab
         this.layer = new Canvas((int) PaintApplication.getCanvas().getWidth(), (int) PaintApplication.getCanvas().getHeight());
         this.root = new StackPane(); //is eventually used as an overlay for previewing changes
-        this.hasSelection = false;
+        this.imageSelection = new ImageSelection(); //stores data related to the current selection
+        this.setSelection(0);
         setOnCloseRequest(e->{
             if (currentCanvas.getDirty()){      //only calls smart save if canvas has changes since last save
                 e.consume();                    //sets up smart/aware save
@@ -52,10 +52,11 @@ public class MyTab extends Tab{
     public StackPane getCurrentRoot(){
         return root;
     }
-    public void setSelection(boolean selection, Image selectionImage) {hasSelection = selection; this.selectionImage = selectionImage;}
-    public void setSelection(boolean selection){hasSelection = selection;}
-    public Image getSelectionImage(){return selectionImage;}
-    public boolean getSelection() {return hasSelection;}
+    public void setSelection(int selection, Image selectionImage) {imageSelection.setState(selection); imageSelection.setSelectionImage(selectionImage);}
+    public void setSelection(int selection){imageSelection.setState(selection);}
+    public Image getSelectionImage(){return imageSelection.getSelectionImage();}
+    public int getSelection() {return imageSelection.getState();}
+    public ImageSelection getImageSelection(){return imageSelection;}
     public String getTabName(){                     //returns name of this tab (based on file without path)
         String tabName = "";
         try{

@@ -63,7 +63,7 @@ public class PaintApplication extends Application {
                 (ov, t, t1) -> {
                     currentCanvas = ((MyTab) t1).getCurrentCanvas();            //change canvas to that tab's canvas
                     StackPane currentRoot = ((MyTab) t1).getCurrentRoot();
-                    if(toolbar.getSelectedTool()==8&&currentRoot.getChildren().contains(currentCanvas)) //if using select tool, maintain selection and add full stackpane instead of just canvas
+                    if(toolbar.getSelectedTool()==8&&currentRoot.getChildren().contains(currentCanvas)||((MyTab) t1).getSelection()>=1) //if using select tool, maintain selection and add full stackpane instead of just canvas
                         sp.setContent(currentRoot);
                     else    //otherwise, just load canvas like normal.
                         sp.setContent(currentCanvas);
@@ -113,6 +113,18 @@ public class PaintApplication extends Application {
                 }
                 else if (event.isControlDown() && (event.getCode() == KeyCode.Y)) { //implements redo file with control y
                     redo();
+                }
+                else if (event.isControlDown() && (event.getCode() == KeyCode.X)) { //implements cut with control X
+                    toolbar.cutImage();
+                }
+                else if (event.isControlDown() && (event.getCode() == KeyCode.C)) { //implements copy with control c
+                    toolbar.copyImage();
+                }
+                else if (event.isControlDown() && (event.getCode() == KeyCode.V)) { //implements paste with control v
+                    try{
+                        toolbar.pasteImage();
+                    }
+                    catch(Exception f){}
                 }
                 else if ((event.getCode() == KeyCode.F11)) { //implements fullscreen toggle
                     getStage().setFullScreen(!PaintApplication.getStage().isFullScreen());

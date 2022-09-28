@@ -1,6 +1,6 @@
 //Steven Engel
 //UndoRedoButton.java
-//A special class for the undo and redo buttons and their associated code. Extends a normal button
+//A special class for the undo and redo buttons and their associated behavior. Extends a normal button
 package com.example.paint;
 
 import javafx.scene.control.Button;
