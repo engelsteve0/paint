@@ -14,6 +14,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
@@ -30,14 +31,17 @@ import javafx.stage.WindowEvent;
 
 public class PaintApplication extends Application {
     private static Stage stage; //ensures that the stage can be referenced in functions
+    private static Scene scene; //allows scene's style to be modified
     private static MyCanvas currentCanvas; //references the canvas currently shown on screen
+    private static StackPane currentRoot;  //references the stackpane of canvas and overlay shown on screen
     private static MyToolbar toolbar;      //holds the tools- just below the file menu
     private static ScrollPane sp;          //holds the canvas- allows it to be scrollable
     private static TabPane tabpane;        //holds the tabs, each of which have a canvas associated with them
     private static int tabsClosed;         //keeps track of number of tabs closed- for smart save on close
-    private static UndoRedoButton undoButton;
+    private static UndoRedoButton undoButton;   //defines the undo and redo buttons
     private static UndoRedoButton redoButton;
-    private static boolean closing = false;
+    private static boolean closing = false;     //checks if the user is trying to close the program
+    private static boolean nightMode = false;   //tracks if the user has toggled night mode
     @Override
     public void start(Stage stage) throws IOException {
         //This section sets up the GUI and menu.
@@ -45,8 +49,6 @@ public class PaintApplication extends Application {
         stage.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png")));
         BorderPane layout = new BorderPane(); //uses a grid to align gui elements neatly- considering multiple grids for different parts of gui
 
-        //VBox canvasBox = new VBox();
-        //canvasBox.getChildren().add(canvas);           //Not really used now but may be used to contain other tools in the future
         this.tabpane = new TabPane(); //for storing different tabs (canvases)
         tabpane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         this.sp = new ScrollPane();   //creates a new scrollpane, containing the canvas. This allows image to be scrolled through
@@ -57,16 +59,16 @@ public class PaintApplication extends Application {
         sp.setFitToWidth(true);  //center
         sp.setPannable(true);  //allows user to pan through pane
         layout.setCenter(sp);
-        layout.setAlignment(sp, Pos.CENTER);
-        newImage();                                                             //starts with a blank slate
+        layout.setAlignment(sp, Pos.CENTER); //starts with a blank slate
+        newImage();
         tabpane.getSelectionModel().selectedItemProperty().addListener(         //if user has switched tab,
                 (ov, t, t1) -> {
                     currentCanvas = ((MyTab) t1).getCurrentCanvas();            //change canvas to that tab's canvas
-                    StackPane currentRoot = ((MyTab) t1).getCurrentRoot();
-                    if(toolbar.getSelectedTool()==8&&currentRoot.getChildren().contains(currentCanvas)||((MyTab) t1).getSelection()>=1) //if using select tool, maintain selection and add full stackpane instead of just canvas
+                    this.currentRoot = ((MyTab) t1).getCurrentRoot();
+                    //if(toolbar.getSelectedTool()==8&&currentRoot.getChildren().contains(currentCanvas)||((MyTab) t1).getSelection()>=1) //if using select tool, maintain selection and add full stackpane instead of just canvas
                         sp.setContent(currentRoot);
-                    else    //otherwise, just load canvas like normal.
-                        sp.setContent(currentCanvas);
+                    //else    //otherwise, just load canvas like normal.
+                    //    sp.setContent(currentCanvas);
                     if(currentCanvas.getLastSaved()!=null){                     //Set window title to reflect newly selected tab's contents
                         stage.setTitle("Paint: " + currentCanvas.getLastSaved());}
                     else{
@@ -78,22 +80,32 @@ public class PaintApplication extends Application {
                     toolbar.setupTools(); //updates toolbar to respond to current canvas
                 }
         );
+
         MyMenu menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
         this.undoButton = new UndoRedoButton(true, new Image(PaintApplication.class.getResourceAsStream("/tools/undo.png")), 16, 16);
         this.redoButton = new UndoRedoButton(false, new Image(PaintApplication.class.getResourceAsStream("/tools/redo.png")), 16, 16);
-        HBox menuBox = new HBox(menu, undoButton, redoButton); //creates undo and redo buttons, adds to an hbox with rest of menu
+        Button saveButton = new Button();
+        ImageView image = new ImageView(new Image(PaintApplication.class.getResourceAsStream("/tools/save.png")));         //set the given image to be this button's icon
+        image.setFitHeight(16);
+        image.setFitHeight(16);
+        image.setPreserveRatio(true);                           //gets buttons to display properly
+        saveButton.setGraphic(image);
+        saveButton.setOnAction(e->{        //behavior for when this is pressed
+            save(currentCanvas.getLastSaved());
+        });
+        HBox menuBox = new HBox(menu, saveButton, undoButton, redoButton); //creates undo and redo buttons, adds to an hbox with rest of menu
         this.toolbar = new MyToolbar(); //see MyToolbar.java (extends the Toolbar class)
         VBox top = new VBox();
         top.getChildren().addAll(menuBox, toolbar, tabpane); //creates a vertical box for the menu, toolbar, and tabpane, allowing them all to rest at the top
         layout.setTop(top);
         layout.setAlignment(top, Pos.TOP_LEFT);
 
-        Scene scene = new Scene(layout, 600, 480); //makes a scene (pun intended)
+        this.scene = new Scene(layout, 600, 480); //makes a scene (pun intended)
         stage.setScene(scene);
         stage.setResizable(true);
         stage.show(); //Displays stage which hosts the scene which hosts the grid which hosts the canvas which hosts the gc
 
-        this.zoom();  //sets up zoom properties
+        //this.zoom();  //sets up zoom properties
         stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, this::exitProgramWarning);
         //This section houses the keyboard shortcuts.
         scene.setOnKeyReleased(new EventHandler<KeyEvent>() {       //implements save with ctrl + s
@@ -142,6 +154,9 @@ public class PaintApplication extends Application {
     public static MyToolbar getToolbar() { return toolbar;}
     public static ScrollPane getScrollPane() {return sp;}
     public static TabPane getTabPane() {return tabpane;}
+    public static boolean getNightMode(){return nightMode;}
+    public static void setNightMode(boolean nM){nightMode=nM;}
+    public static Scene getScene() {return scene;}
     public static void incrementTabsClosed() {++tabsClosed;     //increment tabsClosed to keep track of tabs closed for smart save on close
         if(((tabsClosed)>=tabpane.getTabs().size())&&closing){
             Platform.exit();                                    //exit if all tabs have been dealt with
@@ -278,7 +293,7 @@ public class PaintApplication extends Application {
         currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
     }
     public static void zoom() { //handles zooming/scaling with mouse
-        currentCanvas.setOnScroll(
+        currentRoot.setOnScroll(
                 new EventHandler<ScrollEvent>() {
                     @Override
                     public void handle(ScrollEvent event) {
@@ -288,8 +303,8 @@ public class PaintApplication extends Application {
                             if (deltaY < 0){            //checks if you scroll up, zooms in
                                 zoomFactor = 0.95;
                             }
-                            currentCanvas.setScaleX(currentCanvas.getScaleX() * zoomFactor);  //resizes canvas appropriately
-                            currentCanvas.setScaleY(currentCanvas.getScaleY() * zoomFactor);
+                            currentRoot.setScaleX(currentRoot.getScaleX() * zoomFactor);  //resizes canvas appropriately
+                            currentRoot.setScaleY(currentRoot.getScaleY() * zoomFactor);
                             sp.setHmax(sp.getHmax()*zoomFactor);                //sizes scrollpane appropriately
                             sp.setHmin(sp.getHmin()*zoomFactor);
                             sp.setVmax(sp.getVmax()*zoomFactor);                //sizes scrollpane appropriately
@@ -301,7 +316,8 @@ public class PaintApplication extends Application {
         MyTab tab = new MyTab(currentCanvas);       //creates a new tab
         tabpane.getTabs().add(tab);
         tabpane.getSelectionModel().select(tab);
-        sp.setContent(currentCanvas);
+        currentRoot = tab.getCurrentRoot();
+        //sp.setContent(currentCanvas);
         zoom();                                     //gets zoom controls working again
         updateTab(tab);
     }

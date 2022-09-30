@@ -12,7 +12,7 @@ public class ImageButton extends ToggleButton {
     private int buttonId;
     private final String STYLE_NORMAL = "-fx-background-color: transparent; -fx-padding: 2, 2, 2, 2;"; //defines various styles
     private final String STYLE_PRESSED = "-fx-background-color: transparent; -fx-padding: 3 1 1 3;";   //pressed is not currently used but may be added for visual polish in the future
-    private final String STYLE_SELECTED = "-fx-background-color: transparent; -fx-padding: 2, 2, 2, 2; -fx-border-color: black; -fx-border-width: 1 1 1 1;";
+    private final String STYLE_SELECTED = "-fx-background-color: transparent; -fx-padding: 2, 2, 2, 2; -fx-border-color: orange; -fx-border-width: 1 1 1 1;";
 
     public ImageButton(Image originalImage, double h, double w, int buttonId) {
         super();                                                //start with ToggleButton constructor

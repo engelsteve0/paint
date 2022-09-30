@@ -42,9 +42,24 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, saveAllDD, s2, exitDD);    //adds controls to fileMenu
 
         Menu viewMenu = new Menu("View");
-        MenuItem fullScreenDD = new MenuItem("Toggle Full Screen (F11)");        //saves to a user-specified location
+        MenuItem fullScreenDD = new MenuItem("Toggle Full Screen (F11)");        //toggle fullscreen
         fullScreenDD.setOnAction(e -> PaintApplication.getStage().setFullScreen(!PaintApplication.getStage().isFullScreen()));
-        viewMenu.getItems().addAll(fullScreenDD);
+        MenuItem nightModeDD = new MenuItem("Toggle Night Mode");                //toggles night mode
+        nightModeDD.setOnAction(e-> {
+            if(PaintApplication.getNightMode()){
+                PaintApplication.getScene().getRoot().setStyle("");                 //normal mode
+                PaintApplication.setNightMode(false);
+            }
+            else{
+                PaintApplication.getScene().getRoot().setStyle("-fx-accent: #1e74c6;" +
+                        "    -fx-focus-color: -fx-accent;" +
+                        "    -fx-base: #373e43;" +
+                        "    -fx-control-inner-background: derive(-fx-base, 35%);" +
+                        "    -fx-control-inner-background-alt: -fx-control-inner-background;"); //dark mode
+                PaintApplication.setNightMode(true);
+            }
+        });
+        viewMenu.getItems().addAll(fullScreenDD, nightModeDD);
 
         Menu editMenu = new Menu("Edit");
         MenuItem undoDD = new MenuItem("Undo (Ctrl + Z)");    //undoes latest canvas action

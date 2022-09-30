@@ -4,6 +4,7 @@
 package com.example.paint;
 
 
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
@@ -32,6 +33,9 @@ public class MyTab extends Tab{
         this.root = new StackPane(); //is eventually used as an overlay for previewing changes
         this.imageSelection = new ImageSelection(); //stores data related to the current selection
         this.setSelection(0);
+        root.getChildren().addAll(canvas, layer);                   //adds canvas and overlay to a temporary stackpane to display both
+        root.setAlignment(Pos.TOP_LEFT);
+        PaintApplication.getScrollPane().setContent(root);
         setOnCloseRequest(e->{
             if (currentCanvas.getDirty()){      //only calls smart save if canvas has changes since last save
                 e.consume();                    //sets up smart/aware save

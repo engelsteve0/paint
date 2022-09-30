@@ -59,7 +59,7 @@ public class MyCanvas extends Canvas{
         setScaleX(ogx);            //set back to original scale
         setScaleY(ogy);
 
-        undoStack.push(image);
+        undoStack.push(image);      //push to undo stack
 
     }
 }
