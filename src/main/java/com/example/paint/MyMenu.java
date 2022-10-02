@@ -17,7 +17,14 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @author Steven Engel
+ * @MyMenu.java: This file houses much of the tedious GUI code needed to make the menubar across the top, as well as allowing for dialog popups for some of these options to be created.
+ */
 public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which contains Menus, which dropdown and contain MenuItems
+    /**
+     * Sets up the GUI for the menu bar, after calling the MenuBar constructor.
+     */
     public MyMenu(){
         super();
         Menu fileMenu = new Menu("File"); //creates the menu bar across the top. Menus are subject to change.
@@ -32,6 +39,13 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         saveAsDD.setOnAction(e -> PaintApplication.saveAs());
         MenuItem saveAllDD = new MenuItem("Save All");        //asks user about saving all files
         saveAllDD.setOnAction(e -> PaintApplication.saveAll());
+        MenuItem autoSaveDD = new MenuItem("Toggle autosave"); //allows user to toggle autosave
+        autoSaveDD.setOnAction(e -> {
+            if(PaintApplication.getEnableAutoSave())
+                PaintApplication.setEnableAutoSave(false);
+            else
+                PaintApplication.setEnableAutoSave(true);
+        });
         SeparatorMenuItem s2 = new SeparatorMenuItem();
         MenuItem exitDD = new MenuItem("Exit");             //exits the application
         exitDD.setOnAction(e -> {
@@ -39,7 +53,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
             window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
         });
 
-        fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, saveAllDD, s2, exitDD);    //adds controls to fileMenu
+        fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, saveAllDD, autoSaveDD, s2, exitDD);    //adds controls to fileMenu
 
         Menu viewMenu = new Menu("View");
         MenuItem fullScreenDD = new MenuItem("Toggle Full Screen (F11)");        //toggle fullscreen
@@ -59,7 +73,17 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
                 PaintApplication.setNightMode(true);
             }
         });
-        viewMenu.getItems().addAll(fullScreenDD, nightModeDD);
+        MenuItem autoSaveDisplayDD = new MenuItem("Toggle Autosave Timer Display");
+        autoSaveDisplayDD.setOnAction(e -> {
+            if(PaintApplication.getDisplayAutoSaveTimer()==false){
+                PaintApplication.setDisplayAutoSaveTimer(true);
+            }
+            else{
+                PaintApplication.setDisplayAutoSaveTimer(false);
+                PaintApplication.getAutoSaveTimer().setText("");        //clears text label
+            }
+        });
+        viewMenu.getItems().addAll(fullScreenDD, nightModeDD, autoSaveDisplayDD);
 
         Menu editMenu = new Menu("Edit");
         MenuItem undoDD = new MenuItem("Undo (Ctrl + Z)");    //undoes latest canvas action
@@ -112,6 +136,11 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
 
     }
 
+    /**
+     * Creates an informational popup, with just a title, text, and a close button.
+     * @param titleText The text to be displayed at the top of the window.
+     * @param bodyText The text to be displayed in the body of the window.
+     */
     public void createPopup(String titleText, String bodyText) {        //creates a 600x200 popup window
         final Stage dialog = new Stage();                               //creates a new window
         dialog.setTitle(titleText);
@@ -129,7 +158,11 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
     }
-    public void createResizePopup() {        //creates a 600x200 popup window specifically with button functions for saving changes, cancelling
+
+    /**
+     * Creates a 600x200 popup window specifically for resizing the canvas, with button functions for saving changes, cancelling.
+     */
+    public void createResizePopup() {        //creates a 600x200 popup window specifically for resizing with button functions for saving changes, cancelling
         final Stage dialog = new Stage();                               //creates a new window
         dialog.setTitle("Resize Canvas");
         dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
@@ -201,6 +234,10 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
     }
+
+    /**
+     * Creates a 600x70 popup window specifically built for clearing canvas confirmation.
+     */
     public void createClearCanvasPopup() {        //creates a 600x70 popup window specifically built for clearing canvas confirmation
         final Stage dialog = new Stage();                               //creates a new window
         dialog.setTitle("Clear canvas: are you sure?");

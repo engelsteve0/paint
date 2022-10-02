@@ -13,11 +13,22 @@ import javafx.scene.paint.Color;
 import java.io.File;
 import java.util.Stack;
 
+/**
+ * @author Steven Engel
+ * @MyCanvas.java
+ * This class provides a way for each canvas to store data associated with it, such as the file being worked on.
+ */
 public class MyCanvas extends Canvas{
     private File lastSaved; //stores file that was previously saved for this canvas
     private boolean dirty;
     private Stack<Image> undoStack;                //stores operations on associated canvas. Used for undo/redo operations
     private Stack<Image> redoStack;
+
+    /**
+     * Calls Canvas's constructor with width and height, and creates associated stack.
+     * @param w the width of this canvas
+     * @param h the height of this canvas
+     */
     public MyCanvas(int w, int h){  //calls Canvas's constructor with width and height
         super(w, h);
         this.setStyle("-fx-background-color: white"); //set background manually
@@ -34,6 +45,11 @@ public class MyCanvas extends Canvas{
     public Stack<Image> getRedoStack(){
         return redoStack;
     }
+
+    /**
+     * If user has made an edit, store that information and update tab name with a * appended to reflect this.
+     * @param isDirty Has the canvas been modified?
+     */
     public void setDirty(boolean isDirty) {
         dirty = isDirty;
         try{
@@ -41,12 +57,20 @@ public class MyCanvas extends Canvas{
         }
         catch(Exception e){}
     }
+
+    /**
+     * Sets canvas back to white.
+     */
     public void clearCanvas(){
         GraphicsContext gc = getGraphicsContext2D();
         gc.setFill(Color.WHITE);                                        //fills in canvas with white (slightly distinct from gray background)
         gc.fillRect(0, 0, getWidth(), getHeight());               //sets gc to canvas size
         updateUndoStack();       //updates undo stack to retain initial copy of image
     }
+
+    /**
+     * Gets a snapshot of the image, then pushes it onto the canvas's associated undo stack.
+     */
     public void updateUndoStack(){
         double ogx = getScaleX();//stores original x and y scales to reset after save
         double ogy = getScaleY();

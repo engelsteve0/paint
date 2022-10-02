@@ -29,6 +29,12 @@ import java.io.IOException;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.stage.WindowEvent;
 
+/**@author Steven Engel
+@PaintApplication.java:
+The "brains" of the operation. This class launches a JavaFX application and instantiates various objects associated with said application.
+This class also controls various functions which relate to the program as a whole (as opposed to particular files/canvases)
+ *
+ */
 public class PaintApplication extends Application {
     private static Stage stage; //ensures that the stage can be referenced in functions
     private static Scene scene; //allows scene's style to be modified
@@ -42,6 +48,9 @@ public class PaintApplication extends Application {
     private static UndoRedoButton redoButton;
     private static boolean closing = false;     //checks if the user is trying to close the program
     private static boolean nightMode = false;   //tracks if the user has toggled night mode
+    private static boolean enableAutoSave = false;     //enable autosave- off by default
+    private static Label autoSaveTimer;
+    private static boolean showAutoSaveTimer = true;           //boolean for whether autosave timer should be displayed or not
     @Override
     public void start(Stage stage) throws IOException {
         //This section sets up the GUI and menu.
@@ -78,6 +87,8 @@ public class PaintApplication extends Application {
                     else
                         tabpane.setTabClosingPolicy(TabPane.TabClosingPolicy.SELECTED_TAB);
                     toolbar.setupTools(); //updates toolbar to respond to current canvas
+                    ((MyTab) t).setAutoSaveTimer(false);        //pause autosave timer for previous tab, resume for new tab
+                    ((MyTab) t1).setAutoSaveTimer(true);
                 }
         );
 
@@ -93,7 +104,8 @@ public class PaintApplication extends Application {
         saveButton.setOnAction(e->{        //behavior for when this is pressed
             save(currentCanvas.getLastSaved());
         });
-        HBox menuBox = new HBox(menu, saveButton, undoButton, redoButton); //creates undo and redo buttons, adds to an hbox with rest of menu
+        this.autoSaveTimer = new Label("");
+        HBox menuBox = new HBox(menu, saveButton, undoButton, redoButton, autoSaveTimer); //creates undo and redo buttons, adds to an hbox with rest of menu
         this.toolbar = new MyToolbar(); //see MyToolbar.java (extends the Toolbar class)
         VBox top = new VBox();
         top.getChildren().addAll(menuBox, toolbar, tabpane); //creates a vertical box for the menu, toolbar, and tabpane, allowing them all to rest at the top
@@ -143,6 +155,11 @@ public class PaintApplication extends Application {
                 }
             }});
     }
+
+    /**
+     * Simply launches the application. That should be all that this method does.
+     * @param args
+     */
     public static void main(String[] args) {
         launch();       //launches the application! :)
     }
@@ -156,10 +173,19 @@ public class PaintApplication extends Application {
     public static TabPane getTabPane() {return tabpane;}
     public static boolean getNightMode(){return nightMode;}
     public static void setNightMode(boolean nM){nightMode=nM;}
+    public static boolean getEnableAutoSave(){return enableAutoSave;}
+    public static void setEnableAutoSave(boolean eAS){enableAutoSave = eAS;}
+    public static Label getAutoSaveTimer(){return autoSaveTimer;}
+    public static void setDisplayAutoSaveTimer(boolean set){showAutoSaveTimer = set;}
+    public static boolean getDisplayAutoSaveTimer(){return showAutoSaveTimer;}
+
     public static Scene getScene() {return scene;}
+    /**
+     * This method increments tabsClosed to keep track of tabs closed for smart save on close
+     */
     public static void incrementTabsClosed() {++tabsClosed;     //increment tabsClosed to keep track of tabs closed for smart save on close
         if(((tabsClosed)>=tabpane.getTabs().size())&&closing){
-            Platform.exit();                                    //exit if all tabs have been dealt with
+            System.exit(0);                                    //exit if all tabs have been dealt with
         }
     }
     public static void undo(){      //used to undo/redo (for functions outside this class)
@@ -169,6 +195,14 @@ public class PaintApplication extends Application {
         redoButton.redo();
     }
 
+    /**
+     * Opens a file chooser dialogue in stage. Used for save as and open.
+     * @param title
+     * Sets title of file chooser popup
+     * @param saving
+     * Determines next course of action based on if user is saving (true) or opening (false) a file
+     * @return File (to be saved/opened)
+     */
     public static File chooseFile(String title, Boolean saving) {    //opens a file chooser dialogue in stage. Used for save as and open
         File file;
         FileChooser fileChooser = new FileChooser();
@@ -189,7 +223,10 @@ public class PaintApplication extends Application {
         }
         return file;
     }
-
+    /**
+     * Prepares canvas for opening an image file, opens image file, displays on canvas, and creates and switches to a new tab.
+     * @param file the file to be opened
+     */
     private static void openFile(File file) {   //actually opens an image file
         try {
             currentCanvas = new MyCanvas(128, 128);    //creates a canvas for loading images, drawing on
@@ -212,6 +249,10 @@ public class PaintApplication extends Application {
         }
     }
 
+    /**
+     * Saves the current canvas to an image file of a user-selected type. If user has not saved this canvas before, user is prompted to save as.
+     * @param saveFile the file to be saved.
+     */
     public static void save(File saveFile) {
         if(saveFile==null){      //if a file hasn't been saved before, prompt user to save as.
             saveAs();
@@ -244,9 +285,15 @@ public class PaintApplication extends Application {
                     currentCanvas.setScaleY(ogy);  //sets canvas scale to its original size
                     currentCanvas.setDirty(false); //canvas is now considered clean (saved)
                     updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name, getting rid of dirty status
+                    ((MyTab) tabpane.getSelectionModel().getSelectedItem()).resetAutoSaveTimer();
+                    ((MyTab) tabpane.getSelectionModel().getSelectedItem()).setAutoSaveTimer(true); //resets autosave timer
                 } catch (Exception ex) {
                     System.out.println("Error!");
                 }}}}
+
+    /**
+     * Allows user to choose where a file is saved, utilizing the chooseFile function.
+     */
     public static void saveAs() {       //allows user to choose where a file is saved
         MyTab selTab = (MyTab) tabpane.getSelectionModel().getSelectedItem();
         String name = selTab.getTabName();
@@ -256,7 +303,13 @@ public class PaintApplication extends Application {
             currentCanvas.setLastSaved(file);
             stage.setTitle("Paint: " + file);
             updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name with new name
-        }}
+        }
+        ((MyTab) tabpane.getSelectionModel().getSelectedItem()).setAutoSaveTimer(true); //resets autosave timer
+    }
+
+    /**
+     * Saves to the files of all currently opened tabs, iterating through each tab and asking the user to save as for files that have not yet been saved.
+     */
     public static void saveAll(){
         tabsClosed = 0;
         for (Tab tabs:                  //iterates through all tabs in the tabpane
@@ -271,6 +324,10 @@ public class PaintApplication extends Application {
             }
         }
     }
+
+    /**
+     * Sets up a blank canvas in a new tab of size 128x128 by default.
+     */
     public static void newImage() { //sets up a blank canvas
         currentCanvas = new MyCanvas(128, 128);    //creates a canvas for loading images, drawing on
         currentCanvas.setDirty(true);      //this is considered "dirty" for saving purposes
@@ -292,6 +349,10 @@ public class PaintApplication extends Application {
         createTab();                           //creates a new tab with this canvas
         currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
     }
+
+    /**
+     * Completes the setup which allows user to zoom/scale the screen with the mouse.
+     */
     public static void zoom() { //handles zooming/scaling with mouse
         currentRoot.setOnScroll(
                 new EventHandler<ScrollEvent>() {
@@ -312,6 +373,10 @@ public class PaintApplication extends Application {
                         }
                         event.consume();
                     }});}
+
+    /**
+     * Creates a new tab and sets up its zoom controls. Shows its canvas, as well.
+     */
     public static void createTab(){
         MyTab tab = new MyTab(currentCanvas);       //creates a new tab
         tabpane.getTabs().add(tab);
@@ -321,9 +386,19 @@ public class PaintApplication extends Application {
         zoom();                                     //gets zoom controls working again
         updateTab(tab);
     }
+
+    /**
+     * Updates a tab's name in the visible GUI.
+     * @param tab the tab to be updated
+     */
     public static void updateTab(MyTab tab){        //updates tab's name with new tab name
         tab.setText(tab.getTabName());
     }
+
+    /**
+     * If user hasn't saved some tabs, iterate through tabs and ask user whether they want to save or not.
+     * @param event reference to the exiting event
+     */
     public void exitProgramWarning(WindowEvent event){
         boolean allClean = true;
         for (Tab tabs:
@@ -366,8 +441,6 @@ public class PaintApplication extends Application {
             dialog.show();
             dialog.setResizable(false);                     //don't let user resize; this is just an alert window
         }
-
     }
-
 }
 

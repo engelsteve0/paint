@@ -9,8 +9,20 @@ import javafx.scene.image.ImageView;
 
 import java.util.Stack;
 
+/**
+ * @author Steven Engel
+ * @UndoRedoButton.java: A special class for the undo and redo buttons and their associated behavior. Extends a normal button
+ */
 public class UndoRedoButton extends Button {
     private boolean isUndo; //if true, this is an undo button; if false, a redo
+
+    /**
+     * Creates either an undo or redo button based on the parameters given
+     * @param isUndo Is this an undo button (true) or redo button (false)?
+     * @param originalImage The image icon to be displayed
+     * @param h the height of said image icon
+     * @param w the width of said image icon
+     */
     public UndoRedoButton(boolean isUndo, Image originalImage, int h, int w){
         super();
         this.isUndo = isUndo;
@@ -31,6 +43,10 @@ public class UndoRedoButton extends Button {
             });
         }
     }
+
+    /**
+     * Source function for what happens when a user undoes by any means. Pop from undo stack, push to redo stack, peek on undo stack and display that image on canvas.
+     */
     public void undo(){     //source function for what happens when user undoes
         Stack<Image> uS = ((MyTab)PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas().getUndoStack();    //gets undo and redo stacks for this tab
         Stack<Image> rS = ((MyTab)PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas().getRedoStack();
@@ -50,6 +66,8 @@ public class UndoRedoButton extends Button {
         catch(Exception e){}
 
     }
+    /**
+     * Source function for what happens when a user redoes by any means. Pop from redo stack, push to undo stack.*/
     public void redo(){     //source function for what happens when user redoes
         Stack<Image> uS = ((MyTab)PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas().getUndoStack();
         Stack<Image> rS = ((MyTab)PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas().getRedoStack();
