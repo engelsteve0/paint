@@ -74,7 +74,7 @@ public class MyToolbar extends ToolBar {
     private Color selectedColor;                //keeps track of which color was picked
     private ImageButton[] tools;                //stores the tools themselves
     private int polygonSides;                   //stores number of sides for regular polygon
-    private Clipboard clipboard = Clipboard.getSystemClipboard();
+    private Clipboard clipboard;
     private ClipboardContent clipboardContent = new ClipboardContent();  //stores copied/cut images for pasting
 
     /**
@@ -82,6 +82,7 @@ public class MyToolbar extends ToolBar {
      */
     public MyToolbar(){ //calls Toolbar's constructor with no args
         super();
+        clipboard = Clipboard.getSystemClipboard();
         this.initialTouch = new double[2];
         polygonSides = 3;
         //starting with the bottom of the hierarchy up (tool Buttons -> toolBox as a GridPane -> VBox containing the tools and title -> overall toolbar
@@ -144,6 +145,7 @@ public class MyToolbar extends ToolBar {
         setupTools();
 
     }
+    public MyToolbar(boolean yes) {}; //dummy constructor for unit testing
     public int getSelectedTool(){
         return selectedTool;
     }
@@ -490,7 +492,7 @@ public class MyToolbar extends ToolBar {
      * @param x Should this return the set of x coordinates (true) or y coordinates (false)?
      * @return
      */
-    private static double[] getPolygonSides(double centerX, double centerY, double radius, int sides, boolean x) {
+    public double[] getPolygonSides(double centerX, double centerY, double radius, int sides, boolean x) {
         double[] returnX = new double[sides];
         double[] returnY = new double[sides];
         final double angleStep = Math.PI * 2 / sides;

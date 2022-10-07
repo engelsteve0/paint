@@ -36,7 +36,7 @@ public class MyTab extends Tab{
     private TimerTask autoSaveTask;
     private boolean runAutoSaveTimer;       //determines whether autosave timer should be running at this point or not for this tab specifically
     private int timeLeft;                   //stores time left on autosave timer
-    private static final int autoSaveDuration = 300;
+
 
     /**
      * Calls default tab constructor, then sets up this tab and its associated autosave timer.
@@ -60,21 +60,21 @@ public class MyTab extends Tab{
         });
         runAutoSaveTimer = true;
         this.autoSaveTimer = new Timer();              //handles autosave timer
-        this.timeLeft = 10;                             //10 seconds for test, 300 (5 min) for actual autosave
-        autoSaveTask = new TimerTask() {
+        this.timeLeft = PaintApplication.getAutoSaveDuration();                             //10 seconds for test, 300 (5 min) for actual autosave
+        autoSaveTask = new TimerTask() {                //Special type of thread for autosave timer
             String time = "";
             public void run(){
                 if (timeLeft > 0 && runAutoSaveTimer && PaintApplication.getEnableAutoSave()) { //if this is the selected tab, count down
                     timeLeft--;
-                    time = String.format("%02d:%02d", timeLeft / 60, timeLeft % 60);
+                    time = String.format("%02d:%02d:%02d", timeLeft/3600, (timeLeft%3600) / 60, timeLeft % 60);
                     Platform.runLater(()->{
                         if(PaintApplication.getDisplayAutoSaveTimer())      //only display if user has opted in to display
-                            PaintApplication.getAutoSaveTimer().setText("Autosave in: " + time);    //let user know how much time is left
+                            PaintApplication.getAutoSaveTimer().setText(" Autosave in: " + time);    //let user know how much time is left
                     });
                 }
                 else if(timeLeft<=0 && PaintApplication.getEnableAutoSave()){
                     Platform.runLater(()-> {
-                        timeLeft = autoSaveDuration;
+                        timeLeft = PaintApplication.getAutoSaveDuration();
                         runAutoSaveTimer=false;
                         PaintApplication.save(currentCanvas.getLastSaved());        //autosaves and resets timer
                     });
@@ -82,7 +82,7 @@ public class MyTab extends Tab{
                 else if(PaintApplication.getEnableAutoSave()==false&&PaintApplication.getAutoSaveTimer()!=null){
                     Platform.runLater(()->{
                         if(PaintApplication.getDisplayAutoSaveTimer())      //only display if user has opted in to display
-                            PaintApplication.getAutoSaveTimer().setText("Autosave disabled");                       //if autosave is disabled, let user know
+                            PaintApplication.getAutoSaveTimer().setText(" Autosave disabled");                       //if autosave is disabled, let user know
                     });
                     }
             }
@@ -106,6 +106,7 @@ public class MyTab extends Tab{
     public Image getSelectionImage(){return imageSelection.getSelectionImage();}
     public int getSelection() {return imageSelection.getState();}
     public ImageSelection getImageSelection(){return imageSelection;}
+    public void setTimeLeft(int s){timeLeft = s;}
 
     /**
      * Returns the name of this tab (based on the filename without the path).
@@ -183,7 +184,7 @@ public class MyTab extends Tab{
      * A method for resetting the timer to 5m. Could be used to reset on manual save.
      */
     public void resetAutoSaveTimer(){                   //a method for resetting the timer to 5m. Could be used to reset on manual save
-        timeLeft = autoSaveDuration;
+        timeLeft = PaintApplication.getAutoSaveDuration();
     }
 
     /**
@@ -193,4 +194,9 @@ public class MyTab extends Tab{
     public void setAutoSaveTimer(boolean set){          //determines whether this autosave timer should run or not
         runAutoSaveTimer = set;
     }
+
+    /**
+     * Stops all autosave timer threads. Useful for closing the program and stopping threads from PaintApplication.java.
+     */
+    public void stopAutoSaveTimer() {try{autoSaveTimer.cancel();} catch(Exception e){}};
 }

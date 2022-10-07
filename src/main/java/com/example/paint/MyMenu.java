@@ -39,12 +39,9 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         saveAsDD.setOnAction(e -> PaintApplication.saveAs());
         MenuItem saveAllDD = new MenuItem("Save All");        //asks user about saving all files
         saveAllDD.setOnAction(e -> PaintApplication.saveAll());
-        MenuItem autoSaveDD = new MenuItem("Toggle autosave"); //allows user to toggle autosave
+        MenuItem autoSaveDD = new MenuItem("Autosave Settings"); //allows user to toggle autosave settings
         autoSaveDD.setOnAction(e -> {
-            if(PaintApplication.getEnableAutoSave())
-                PaintApplication.setEnableAutoSave(false);
-            else
-                PaintApplication.setEnableAutoSave(true);
+            createAutoSavePopup();
         });
         SeparatorMenuItem s2 = new SeparatorMenuItem();
         MenuItem exitDD = new MenuItem("Exit");             //exits the application
@@ -73,17 +70,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
                 PaintApplication.setNightMode(true);
             }
         });
-        MenuItem autoSaveDisplayDD = new MenuItem("Toggle Autosave Timer Display");
-        autoSaveDisplayDD.setOnAction(e -> {
-            if(PaintApplication.getDisplayAutoSaveTimer()==false){
-                PaintApplication.setDisplayAutoSaveTimer(true);
-            }
-            else{
-                PaintApplication.setDisplayAutoSaveTimer(false);
-                PaintApplication.getAutoSaveTimer().setText("");        //clears text label
-            }
-        });
-        viewMenu.getItems().addAll(fullScreenDD, nightModeDD, autoSaveDisplayDD);
+        viewMenu.getItems().addAll(fullScreenDD, nightModeDD);
 
         Menu editMenu = new Menu("Edit");
         MenuItem undoDD = new MenuItem("Undo (Ctrl + Z)");    //undoes latest canvas action
@@ -111,7 +98,6 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
                 PaintApplication.getToolbar().pasteImage();
             }
             catch(Exception f){}
-
         });
         SeparatorMenuItem s4 = new SeparatorMenuItem();
         MenuItem resizeDD = new MenuItem("Resize Canvas");    //opens window letting user resize canvas
@@ -260,6 +246,87 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         HBox buttonsBox = new HBox(clearButton, cancelButton);
         dialogVbox.getChildren().addAll(t, buttonsBox);                //actually adds text to window
         Scene dialogScene = new Scene(dialogVbox, 600, 70);
+        dialog.setScene(dialogScene);                   //displays window to user
+        dialog.show();
+    }
+    /**
+     * Creates a 600x70 popup window specifically built for autosave settings.
+     */
+    public void createAutoSavePopup() {        //creates a 600x70 popup window specifically built for autosave settings
+        final Stage dialog = new Stage();                               //creates a new window
+        dialog.setTitle("Autosave Settings");
+        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
+        dialog.initOwner(PaintApplication.getStage());
+        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        Button toggleButton = new Button();
+        Label autoSaveDesc = new Label("The autosave feature automatically saves each canvas after the time shown.");   //informs user about autosave
+        if(PaintApplication.getEnableAutoSave()){
+            toggleButton.setText("Toggle Autosave (currently enabled)");
+        }
+        else
+            toggleButton.setText("Toggle Autosave (currently disabled)");
+        toggleButton.setOnAction(e->{                                    //master enable/disable for autosave
+            if(PaintApplication.getEnableAutoSave()){
+                PaintApplication.setEnableAutoSave(false);
+                toggleButton.setText("Toggle Autosave (currently disabled)");            //changes text to let user know whether it is currently enabled or disabled
+            }
+
+            else{
+                PaintApplication.setEnableAutoSave(true);
+                toggleButton.setText("Toggle Autosave (currently enabled)");
+            }
+
+        });
+        Button displayButton = new Button();
+        if(PaintApplication.getDisplayAutoSaveTimer()){
+            displayButton.setText("Toggle Autosave Display (currently displayed)");
+        }
+        else
+            displayButton.setText("Toggle Autosave Display (currently not displayed)"); //toggles whether autosave timer is displayed or not
+        displayButton.setOnAction(e->{
+            if(PaintApplication.getDisplayAutoSaveTimer()==false){
+                PaintApplication.setDisplayAutoSaveTimer(true);
+                displayButton.setText("Toggle Autosave Display (currently displayed)"); //changes text to let user know whether it is currently displayed or not
+            }
+            else{
+                PaintApplication.setDisplayAutoSaveTimer(false);
+                PaintApplication.getAutoSaveTimer().setText("");        //clears text label
+                displayButton.setText("Toggle Autosave Display (currently not displayed)");
+            }
+        });
+        AtomicInteger timeValue = new AtomicInteger(PaintApplication.getAutoSaveDuration());
+        TextField timeInput = new TextField(String.valueOf(timeValue.get()));
+        Label timeLabel = new Label("Enter time between autosaves (seconds): ");
+        HBox timeHBox = new HBox(timeLabel, timeInput);
+        timeInput.textProperty().addListener((ov, old_val, new_val) -> {
+            try{                                        //if user tries to input a non-number, don't let them and instead set it to 1
+                timeValue.set(Integer.parseInt(new_val));
+            }
+            catch(Exception e){
+                timeValue.set(300);
+            }
+            if(timeValue.get()<1||timeValue.get()>36000){                           //Limit size to >0, <6 hours range
+                timeValue.set(1);
+            }
+            //updates text input with new value
+            timeInput.setText(String.valueOf(timeValue.get()));
+        });
+        Button saveButton = new Button("Apply");
+        saveButton.setOnAction(e->{
+            PaintApplication.setAutoSaveDuration(timeValue.get());  //changes autosave duration to typed value
+            for (Tab tabs:                  //iterates through all tabs in the tabpane, changing time left on them
+                    PaintApplication.getTabPane().getTabs()) {
+                ((MyTab)tabs).setTimeLeft(timeValue.get());
+            }
+        });
+        Button closeButton = new Button("Close");
+        closeButton.setOnAction(e->{                                   //closes this dialog
+            dialog.close();
+        });
+        HBox buttonsBox = new HBox(saveButton, closeButton);
+        VBox bigBox = new VBox(autoSaveDesc, toggleButton, displayButton, timeHBox, buttonsBox);
+        bigBox.setSpacing(10);      //ensures buttons aren't right on top of each other
+        Scene dialogScene = new Scene(bigBox, 600, 200);
         dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
     }

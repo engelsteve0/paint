@@ -21,13 +21,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
+import javafx.stage.*;
+
 import javax.imageio.ImageIO;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javafx.embed.swing.SwingFXUtils;
-import javafx.stage.WindowEvent;
+
+import static java.lang.Thread.currentThread;
 
 /**@author Steven Engel
 @PaintApplication.java:
@@ -51,6 +53,9 @@ public class PaintApplication extends Application {
     private static boolean enableAutoSave = false;     //enable autosave- off by default
     private static Label autoSaveTimer;
     private static boolean showAutoSaveTimer = true;           //boolean for whether autosave timer should be displayed or not
+    private static BufferedImage renderedImage;
+    private static String extension;
+    private static int autoSaveDuration = 300;                  //stores autosave duration in seconds
     @Override
     public void start(Stage stage) throws IOException {
         //This section sets up the GUI and menu.
@@ -180,6 +185,8 @@ public class PaintApplication extends Application {
     public static boolean getDisplayAutoSaveTimer(){return showAutoSaveTimer;}
 
     public static Scene getScene() {return scene;}
+    public static int getAutoSaveDuration(){return autoSaveDuration;}
+    public static void setAutoSaveDuration(int asD){autoSaveDuration = asD;}
     /**
      * This method increments tabsClosed to keep track of tabs closed for smart save on close
      */
@@ -258,8 +265,8 @@ public class PaintApplication extends Application {
             saveAs();
         }
         else{                   //otherwise, just save to previous
-            System.out.println("Saving...");
             if (saveFile != null) {
+                boolean savePrompted = false;   //checks if user has been prompted to save or not
                 try {
                     double ogx = currentCanvas.getScaleX();//stores original x and y scales to reset after save
                     double ogy = currentCanvas.getScaleY();
@@ -267,46 +274,100 @@ public class PaintApplication extends Application {
                     currentCanvas.setScaleY(1);
                     WritableImage writableImage = new WritableImage((int) currentCanvas.getWidth(), (int) currentCanvas.getHeight());
                     currentCanvas.snapshot(null, writableImage);
-                    BufferedImage renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
-                    String extension = "";
+                    renderedImage = SwingFXUtils.fromFXImage(writableImage, null);
+                    extension = "";
                     int i = saveFile.getName().lastIndexOf('.');
                     if (i > 0) {
                         extension = saveFile.getName().substring(i+1);
                     }
                     switch (extension){
                         case "jpg": case "bmp": //for a few formats, transparency cannot be saved. This removes the alpha (TYPE_INT_RGB, not ARGB) to fix that
+                            File previousFile;
+                            String previousExtension = "";
+                            try{
+                                previousFile = currentCanvas.getLastSaved();
+                                int j = previousFile.getName().lastIndexOf('.');
+                                if (j > 0) {
+                                    previousExtension = previousFile.getName().substring(j+1);
+                                }
+                                System.out.println(previousExtension);
+                            }
+                            catch(Exception e){previousFile = null;}    //for first file being saved, don't lead to the warning
+                                if(previousExtension.equals("png")||previousExtension.equals("png*")) {     //if saving from a png to something else, warn about transparency loss
+                                    //create warning popup
+                                    savePrompted = true;
+                                    Stage dialog = new Stage();                               //creates a new popup window asking if user still wants to save
+                                    dialog.initStyle(StageStyle.UNDECORATED);                 //Looks ugly, but prevents user from messing up tab counts with x button for aware save
+                                    dialog.setTitle("WARNING!");
+                                    dialog.initModality(Modality.APPLICATION_MODAL);
+                                    dialog.initOwner(PaintApplication.getStage());
+                                    dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+                                    VBox dialogVbox = new VBox(20);
+                                    Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
+                                    Text t = new Text("Saving this image in that format will cause transparency to be lost. Are you sure that you want to save?");
+                                    t.setFont(CS);
+
+                                    Button saveButton = new Button("Yes, Save"); //Gives user options for saving, not saving, or cancelling the operation
+                                    saveButton.setOnAction(e-> {
+                                        try {
+                                            writeImage(saveFile);
+                                        } catch (IOException ex) {
+                                            throw new RuntimeException(ex);
+                                        }
+                                        ((MyTab) tabpane.getSelectionModel().getSelectedItem()).resetAutoSaveTimer();
+                                            ((MyTab) tabpane.getSelectionModel().getSelectedItem()).setAutoSaveTimer(true); //resets autosave timer
+                                            currentCanvas.setDirty(false); //canvas is now considered clean (saved)
+                                            updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name, getting rid of dirty status
+                                            currentCanvas.setLastSaved(saveFile);
+                                            stage.setTitle("Paint: " + saveFile);
+                                            updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name with new name
+                                            dialog.close();
+                                    });
+                                    Button cancelButton = new Button("Cancel");     //just get rid of the window
+                                    cancelButton.setOnAction(e -> {
+                                        dialog.close();
+                                    });
+                                    HBox options = new HBox();
+                                    options.getChildren().addAll(saveButton, cancelButton);
+                                    dialogVbox.getChildren().addAll(t, options);                //actually adds text, button to window
+                                    Scene dialogScene = new Scene(dialogVbox, 600, 60);
+                                    dialog.setScene(dialogScene);                   //displays window to user
+                                    dialog.show();
+                                    dialog.setResizable(false);                     //don't let user resize; this is just an alert window
+                                }
                             BufferedImage newBufferedImage = new BufferedImage(renderedImage.getWidth(), renderedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
                             newBufferedImage.createGraphics().drawImage(renderedImage, 0, 0, java.awt.Color.WHITE, null);
                             renderedImage = newBufferedImage;
                             break;
                     }
-                    ImageIO.write(renderedImage, extension, saveFile); //writes file with png writer regardless of format for now... jpg was not working
+                    if(!savePrompted){
+                        ImageIO.write(renderedImage, extension, saveFile); //writes file
+                        ((MyTab) tabpane.getSelectionModel().getSelectedItem()).resetAutoSaveTimer();
+                        ((MyTab) tabpane.getSelectionModel().getSelectedItem()).setAutoSaveTimer(true); //resets autosave timer
+                        currentCanvas.setDirty(false); //canvas is now considered clean (saved)
+                        updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name, getting rid of dirty status
+                        currentCanvas.setLastSaved(saveFile);
+                        stage.setTitle("Paint: " + saveFile);
+                        updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name with new name
+                    }
                     currentCanvas.setScaleX(ogx);
                     currentCanvas.setScaleY(ogy);  //sets canvas scale to its original size
-                    currentCanvas.setDirty(false); //canvas is now considered clean (saved)
-                    updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name, getting rid of dirty status
-                    ((MyTab) tabpane.getSelectionModel().getSelectedItem()).resetAutoSaveTimer();
-                    ((MyTab) tabpane.getSelectionModel().getSelectedItem()).setAutoSaveTimer(true); //resets autosave timer
                 } catch (Exception ex) {
                     System.out.println("Error!");
                 }}}}
-
     /**
      * Allows user to choose where a file is saved, utilizing the chooseFile function.
      */
     public static void saveAs() {       //allows user to choose where a file is saved
         MyTab selTab = (MyTab) tabpane.getSelectionModel().getSelectedItem();
         String name = selTab.getTabName();
+
         File file = chooseFile("Save " + name + " as...", true);  //opens file explorer
         if(file!=null) {    //if the chosen file is not null, stored reference to it in lastSaved, save to that file
             save(file);
-            currentCanvas.setLastSaved(file);
-            stage.setTitle("Paint: " + file);
-            updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name with new name
         }
         ((MyTab) tabpane.getSelectionModel().getSelectedItem()).setAutoSaveTimer(true); //resets autosave timer
     }
-
     /**
      * Saves to the files of all currently opened tabs, iterating through each tab and asking the user to save as for files that have not yet been saved.
      */
@@ -324,7 +385,9 @@ public class PaintApplication extends Application {
             }
         }
     }
-
+    public static void writeImage(File saveFile) throws IOException {
+        ImageIO.write(renderedImage, extension, saveFile); //writes file
+    }
     /**
      * Sets up a blank canvas in a new tab of size 128x128 by default.
      */
@@ -349,7 +412,6 @@ public class PaintApplication extends Application {
         createTab();                           //creates a new tab with this canvas
         currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
     }
-
     /**
      * Completes the setup which allows user to zoom/scale the screen with the mouse.
      */
@@ -373,7 +435,6 @@ public class PaintApplication extends Application {
                         }
                         event.consume();
                     }});}
-
     /**
      * Creates a new tab and sets up its zoom controls. Shows its canvas, as well.
      */
@@ -386,7 +447,6 @@ public class PaintApplication extends Application {
         zoom();                                     //gets zoom controls working again
         updateTab(tab);
     }
-
     /**
      * Updates a tab's name in the visible GUI.
      * @param tab the tab to be updated
@@ -394,7 +454,6 @@ public class PaintApplication extends Application {
     public static void updateTab(MyTab tab){        //updates tab's name with new tab name
         tab.setText(tab.getTabName());
     }
-
     /**
      * If user hasn't saved some tabs, iterate through tabs and ask user whether they want to save or not.
      * @param event reference to the exiting event
@@ -420,12 +479,20 @@ public class PaintApplication extends Application {
             Button saveAllButton = new Button("Save");     //Gives user options for saving, not saving, or cancelling the operation
             saveAllButton.setOnAction(e->{
                 dialog.close();
+                for (Tab tabs:                                //stops all autosave timer threads to ensure that the entire application closes
+                        tabpane.getTabs()) {
+                    ((MyTab) tabs).stopAutoSaveTimer();
+                }
                 this.closing = true;
                 saveAll();
             });
             Button closeButton = new Button("Don't Save");  //close program without saving
             closeButton.setOnAction(e->{
                 dialog.close();
+                for (Tab tabs:                                  //stops all autosave timer threads to ensure that the entire application closes
+                        tabpane.getTabs()) {
+                    ((MyTab) tabs).stopAutoSaveTimer();
+                }
                 Platform.exit();
             });
             Button cancelButton = new Button("Cancel");     //just get rid of the window
@@ -440,6 +507,12 @@ public class PaintApplication extends Application {
             dialog.setScene(dialogScene);                   //displays window to user
             dialog.show();
             dialog.setResizable(false);                     //don't let user resize; this is just an alert window
+        }
+        else {
+            for (Tab tabs:
+                    tabpane.getTabs()) {
+                ((MyTab) tabs).stopAutoSaveTimer();         //stops all autosave timer threads to ensure that the entire application closes
+            }
         }
     }
 }

@@ -28,7 +28,7 @@ public class UndoRedoButton extends Button {
         this.isUndo = isUndo;
         ImageView image = new ImageView(originalImage);         //set the given image to be this button's icon
         image.setFitHeight(h);
-        image.setFitHeight(w);
+        image.setFitWidth(w);
         image.setPreserveRatio(true);                           //gets buttons to display properly
         setGraphic(image);
 
