@@ -66,6 +66,7 @@ public class MyCanvas extends Canvas{
         gc.setFill(Color.WHITE);                                        //fills in canvas with white (slightly distinct from gray background)
         gc.fillRect(0, 0, getWidth(), getHeight());               //sets gc to canvas size
         updateUndoStack();       //updates undo stack to retain initial copy of image
+        LogHandler.getLogHandler().writeToLog(true, "Canvas cleared.");
     }
 
     /**

@@ -77,6 +77,7 @@ public class MyTab extends Tab{
                         timeLeft = PaintApplication.getAutoSaveDuration();
                         runAutoSaveTimer=false;
                         PaintApplication.save(currentCanvas.getLastSaved());        //autosaves and resets timer
+                        LogHandler.getLogHandler().writeToLog(true, "Autosaved to " + currentCanvas.getLastSaved().getName());
                     });
                 }
                 else if(PaintApplication.getEnableAutoSave()==false&&PaintApplication.getAutoSaveTimer()!=null){

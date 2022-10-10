@@ -15,6 +15,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -108,9 +110,17 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         MenuItem clearCanvasDD = new MenuItem("Clear Canvas");    //opens window letting user clear
         clearCanvasDD.setOnAction(e -> {
             createClearCanvasPopup();
-
         });
-        editMenu.getItems().addAll(undoDD, redoDD, s3, cutDD, copyDD, pasteDD, s4, resizeDD, clearCanvasDD);
+        SeparatorMenuItem s5 = new SeparatorMenuItem();
+        MenuItem rotateCanvasDD = new MenuItem("Rotate Canvas/Selection");    //opens window letting user clear
+        rotateCanvasDD.setOnAction(e -> {
+            createRotateCanvasPopup();
+        });
+        MenuItem flipCanvasDD = new MenuItem("Flip/Mirror Canvas");    //opens window letting user clear
+        flipCanvasDD.setOnAction(e -> {
+            createRotateCanvasPopup();
+        });
+        editMenu.getItems().addAll(undoDD, redoDD, s3, cutDD, copyDD, pasteDD, s4, resizeDD, clearCanvasDD, s5, rotateCanvasDD, flipCanvasDD);
         Menu helpMenu = new Menu("Help");
         MenuItem helpDD = new MenuItem("Help");                     //saves to a user-specified location
         helpDD.setOnAction(e -> createPopup("Help", "Hello and welcome to Paint!\nTo begin, open an existing image, or create a new 128x128 pixel canvas through the file menu.\nThen, select a tool in the toolbar and click on the canvas area to draw.\nBe sure to save your work frequently in the file menu!"));
@@ -210,6 +220,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
             currentCanvas.setScaleX(ogx);            //resets canvas scale
             currentCanvas.setScaleY(ogy);
             currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
+            LogHandler.getLogHandler().writeToLog(true, "Canvas resized to " + xValue + "x" + yValue);
             dialog.close();
         });
         Button cancelButton = new Button("Cancel");
@@ -325,6 +336,69 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         });
         HBox buttonsBox = new HBox(saveButton, closeButton);
         VBox bigBox = new VBox(autoSaveDesc, toggleButton, displayButton, timeHBox, buttonsBox);
+        bigBox.setSpacing(10);      //ensures buttons aren't right on top of each other
+        Scene dialogScene = new Scene(bigBox, 600, 200);
+        dialog.setScene(dialogScene);                   //displays window to user
+        dialog.show();
+    }
+    /**
+     * Creates a 600x70 popup window specifically built for rotation settings.
+     */
+    public void createRotateCanvasPopup() {        //creates a 600x70 popup window specifically built for rotation settings
+        final Stage dialog = new Stage();                               //creates a new window
+        dialog.setTitle("Rotation Settings");
+        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
+        dialog.initOwner(PaintApplication.getStage());
+        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        Button toggleButton = new Button();
+        Label autoSaveDesc = new Label("Enter the number of degrees to rotate by and choose whether this should apply to the whole canvas or selection:");   //informs user about autosave
+        AtomicBoolean wholeCanvas = new AtomicBoolean(true);
+        if(wholeCanvas.get()){
+            toggleButton.setText("Whole Canvas");
+        }
+        else
+            toggleButton.setText("Selection");
+        toggleButton.setOnAction(e->{                                    //master enable/disable for autosave
+            if(wholeCanvas.get()){
+                wholeCanvas.set(false);
+                toggleButton.setText("Selection");            //changes text to let user know whether it is currently enabled or disabled
+            }
+
+            else{
+                wholeCanvas.set(true);
+                toggleButton.setText("Whole Canvas");            //changes text to let user know whether it is currently enabled or disabled
+            }
+
+        });
+
+        AtomicInteger rotationValue = new AtomicInteger(90);
+        TextField rotationInput = new TextField(String.valueOf(rotationValue.get()));
+        Label rotationLabel = new Label("Enter degrees to rotate by (CW): ");
+        HBox rotationHBox = new HBox(rotationLabel, rotationInput);
+        rotationInput.textProperty().addListener((ov, old_val, new_val) -> {
+            try{                                        //if user tries to input a non-number, don't let them and instead set it to 1
+                rotationValue.set(Integer.parseInt(new_val));
+            }
+            catch(Exception e){
+                rotationValue.set(90);
+            }
+            if(rotationValue.get()<1||rotationValue.get()>359){                           //Limit size to >0, <6 hours range
+                rotationValue.set(90);
+            }
+            //updates text input with new value
+            rotationInput.setText(String.valueOf(rotationValue.get()));
+        });
+        Button saveButton = new Button("Apply");
+        saveButton.setOnAction(e->{
+            PaintApplication.getToolbar().rotateImage(rotationValue.get(), wholeCanvas.get());  //sets rotation value in degrees, whether to rotate whole canvas or not
+            dialog.close();
+        });
+        Button closeButton = new Button("Close");
+        closeButton.setOnAction(e->{                                   //closes this dialog
+            dialog.close();
+        });
+        HBox buttonsBox = new HBox(saveButton, closeButton);
+        VBox bigBox = new VBox(autoSaveDesc, toggleButton, rotationHBox, buttonsBox);
         bigBox.setSpacing(10);      //ensures buttons aren't right on top of each other
         Scene dialogScene = new Scene(bigBox, 600, 200);
         dialog.setScene(dialogScene);                   //displays window to user

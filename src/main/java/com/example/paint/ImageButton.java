@@ -5,6 +5,7 @@
 package com.example.paint;
 
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -35,7 +36,6 @@ public class ImageButton extends ToggleButton {
         image.setPreserveRatio(true);
         setGraphic(image);
         setStyle(STYLE_NORMAL);                                 //default is not selected
-
         setOnAction(e -> { //if this ImageButton is clicked on, toggle it
             if(PaintApplication.getToolbar().getSelectedTool()!=buttonId) {     //if the previous selection was different than this, set this as the new buttonId selected
                 PaintApplication.getToolbar().setSelectedTool(buttonId);
@@ -43,10 +43,23 @@ public class ImageButton extends ToggleButton {
                 if(buttonId==7){                                                 //if this is the polygon button, prompt user for number of sides
                     PaintApplication.getToolbar().promptNumSides();
                 }
+                switch (buttonId){
+                    case 0: LogHandler.getLogHandler().writeToLog(true, "Pencil tool selected."); break;
+                    case 1: LogHandler.getLogHandler().writeToLog(true, "Eraser tool selected."); break;
+                    case 2: LogHandler.getLogHandler().writeToLog(true, "Straight line tool selected."); break;
+                    case 3: LogHandler.getLogHandler().writeToLog(true, "Color picker tool selected."); break;
+                    case 4: LogHandler.getLogHandler().writeToLog(true, "Dashed line tool selected."); break;
+                    case 5: LogHandler.getLogHandler().writeToLog(true, "Rectangle/square tool selected."); break;
+                    case 6: LogHandler.getLogHandler().writeToLog(true, "Ellipse/circle tool selected."); break;
+                    case 7: LogHandler.getLogHandler().writeToLog(true, "Polygon tool selected."); break;
+                    case 8: LogHandler.getLogHandler().writeToLog(true, "Rectangular selection tool selected."); break;
+                    case 9: LogHandler.getLogHandler().writeToLog(true, "Axes tool selected."); break;
+                }
             }
             else {
                 PaintApplication.getToolbar().setSelectedTool(-1);              //otherwise, deselect
                 PaintApplication.getScrollPane().setPannable(true);             //pan tool by default
+                LogHandler.getLogHandler().writeToLog(true, "Pan tool selected.");
             }
         });
 

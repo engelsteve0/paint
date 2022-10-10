@@ -41,6 +41,7 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Affine;
 import javafx.scene.transform.Translate;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -88,15 +89,25 @@ public class MyToolbar extends ToolBar {
         //starting with the bottom of the hierarchy up (tool Buttons -> toolBox as a GridPane -> VBox containing the tools and title -> overall toolbar
         this.tools = new ImageButton[numTools];      //uses an array to store tool buttons
         tools[0] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/pencil.png")), 16, 16, 0 );
+        tools[0].setTooltip(new Tooltip("Pencil Tool"));
         tools[1] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/eraser.png")), 16, 16, 1 );
+        tools[1].setTooltip(new Tooltip("Eraser Tool"));
         tools[2] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/line.png")), 16, 16, 2 );
+        tools[2].setTooltip(new Tooltip("Straight Line Tool"));
         tools[3] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/picker.png")), 16, 16, 3 );
+        tools[3].setTooltip(new Tooltip("Color Picker Tool"));
         tools[4] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/dashline.png")), 16, 16, 4 );
+        tools[4].setTooltip(new Tooltip("Dashed Line Tool"));
         tools[5] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/square.png")), 16, 16, 5 );
+        tools[5].setTooltip(new Tooltip("Rectangle/Square (SHIFT) Tool"));
         tools[6] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/circle.png")), 16, 16, 6 );
+        tools[6].setTooltip(new Tooltip("Ellipse/Circle (SHIFT) Tool"));
         tools[7] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/polygon.png")), 16, 16, 7 );
+        tools[7].setTooltip(new Tooltip("Polygon Tool"));
         tools[8] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/selectrect.png")), 16, 16, 8 );
+        tools[8].setTooltip(new Tooltip("Rectangular/Square Selection Tool"));
         tools[9] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/axes.png")), 16, 16, 9 );
+        tools[9].setTooltip(new Tooltip("Axes Tool"));
         GridPane toolBox = new GridPane();
         for(int i=0; i<numTools; i++)
         {
@@ -141,6 +152,7 @@ public class MyToolbar extends ToolBar {
         Separator s3 = new Separator(Orientation.VERTICAL);
         this.getItems().addAll(toolVBox, s1, sizeSelector, s2, cp, s3);         //adds items to toolbar
         cp.setOnAction((EventHandler) t -> selectedColor = cp.getValue());
+        cp.setTooltip(new Tooltip("Color Picker"));
 
         setupTools();
 
@@ -455,7 +467,7 @@ public class MyToolbar extends ToolBar {
                         canvas.updateUndoStack();       //updates undo stack when feature drawing is ended
                     }
         });
-
+        LogHandler.getLogHandler().writeToLog(false, "Toolbar initialized.");
     }
 
     /**
@@ -576,6 +588,7 @@ public class MyToolbar extends ToolBar {
      */
     public void copyImage(){    //copies image into system clipboard
         this.clipboardContent.putImage(((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getSelectionImage());
+        LogHandler.getLogHandler().writeToLog(true, "Selection copied.");
     }
 
     /**
@@ -592,6 +605,7 @@ public class MyToolbar extends ToolBar {
         copyImage();            //first, copy the image. Then, leave blank rectangle behind on canvas and deselect
         thisTab.setSelection(0);    //set selection back to 0
         ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas().updateUndoStack();
+        LogHandler.getLogHandler().writeToLog(true, "Selection cut.");
     }
 
     /**
@@ -609,6 +623,25 @@ public class MyToolbar extends ToolBar {
             thisTab.getCurrentCanvas().getGraphicsContext2D().drawImage(image, 0, 0, image.getWidth(), image.getHeight()); //actually draws image right on canvas
             thisTab.getCurrentCanvas().updateUndoStack(); //lets undo know a change has been made
         }
+        LogHandler.getLogHandler().writeToLog(true, "Selection pasted.");
+    }
+    public void rotateImage(int degreesCW, boolean wholeCanvas){
+        MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
+        MyCanvas canvas = thisTab.getCurrentCanvas();
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        if(wholeCanvas){
+            Image snapshot = canvas.snapshot(null, null);
+            gc.setFill(Color.WHITE);
+            gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());   //temporarily clears canvas to complete rotation
 
+            gc.save(); // Save default transform
+            Affine rotate = new Affine();       //creates a new rotation transform about the center of the canvas
+            rotate.appendRotation(degreesCW, canvas.getWidth()/2, canvas.getHeight()/2);
+            gc.setTransform(rotate);    //rotates about center of canvas
+            gc.drawImage(snapshot, 0, 0);
+            gc.restore(); // Restore default transform
+        }
+        canvas.updateUndoStack();
+        LogHandler.getLogHandler().writeToLog(true, "Rotated " + degreesCW + " degrees clockwise.");
     }
 }

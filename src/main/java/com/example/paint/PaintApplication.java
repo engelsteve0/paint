@@ -58,11 +58,14 @@ public class PaintApplication extends Application {
     private static int autoSaveDuration = 300;                  //stores autosave duration in seconds
     @Override
     public void start(Stage stage) throws IOException {
+        //sets up the log handler
+        String dummyArgs[] = {""};
+        LogHandler.main(dummyArgs);
+        LogHandler.getLogHandler().writeToLog(false, "Application started successfully.");
         //This section sets up the GUI and menu.
         this.stage = stage;
         stage.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png")));
         BorderPane layout = new BorderPane(); //uses a grid to align gui elements neatly- considering multiple grids for different parts of gui
-
         this.tabpane = new TabPane(); //for storing different tabs (canvases)
         tabpane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         this.sp = new ScrollPane();   //creates a new scrollpane, containing the canvas. This allows image to be scrolled through
@@ -79,10 +82,7 @@ public class PaintApplication extends Application {
                 (ov, t, t1) -> {
                     currentCanvas = ((MyTab) t1).getCurrentCanvas();            //change canvas to that tab's canvas
                     this.currentRoot = ((MyTab) t1).getCurrentRoot();
-                    //if(toolbar.getSelectedTool()==8&&currentRoot.getChildren().contains(currentCanvas)||((MyTab) t1).getSelection()>=1) //if using select tool, maintain selection and add full stackpane instead of just canvas
-                        sp.setContent(currentRoot);
-                    //else    //otherwise, just load canvas like normal.
-                    //    sp.setContent(currentCanvas);
+                    sp.setContent(currentRoot);
                     if(currentCanvas.getLastSaved()!=null){                     //Set window title to reflect newly selected tab's contents
                         stage.setTitle("Paint: " + currentCanvas.getLastSaved());}
                     else{
@@ -99,8 +99,11 @@ public class PaintApplication extends Application {
 
         MyMenu menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
         this.undoButton = new UndoRedoButton(true, new Image(PaintApplication.class.getResourceAsStream("/tools/undo.png")), 16, 16);
+        undoButton.setTooltip(new Tooltip("Undo (CTRL + Z)"));
         this.redoButton = new UndoRedoButton(false, new Image(PaintApplication.class.getResourceAsStream("/tools/redo.png")), 16, 16);
+        redoButton.setTooltip(new Tooltip("Redo (CTRL + Y)"));
         Button saveButton = new Button();
+        saveButton.setTooltip(new Tooltip("Save (CTRL + S)"));
         ImageView image = new ImageView(new Image(PaintApplication.class.getResourceAsStream("/tools/save.png")));         //set the given image to be this button's icon
         image.setFitHeight(16);
         image.setFitHeight(16);
@@ -251,8 +254,10 @@ public class PaintApplication extends Application {
             sp.setVmin(0);
             createTab();
             currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
+            String logFile = file.getName();
+            LogHandler.getLogHandler().writeToLog(true, "Opened " + logFile + " in new tab.");
         } catch (Exception e) {
-            System.out.println("Could not open file.");
+            LogHandler.getLogHandler().writeToLog(false, "Could not open file.");
         }
     }
 
@@ -322,6 +327,7 @@ public class PaintApplication extends Application {
                                             stage.setTitle("Paint: " + saveFile);
                                             updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name with new name
                                             dialog.close();
+                                            LogHandler.getLogHandler().writeToLog(true, "Saved to " + saveFile.getName());
                                     });
                                     Button cancelButton = new Button("Cancel");     //just get rid of the window
                                     cancelButton.setOnAction(e -> {
@@ -349,6 +355,7 @@ public class PaintApplication extends Application {
                         currentCanvas.setLastSaved(saveFile);
                         stage.setTitle("Paint: " + saveFile);
                         updateTab((MyTab) tabpane.getSelectionModel().getSelectedItem()); //updates this tab's name with new name
+                        LogHandler.getLogHandler().writeToLog(true, "Saved to " + saveFile.getName());
                     }
                     currentCanvas.setScaleX(ogx);
                     currentCanvas.setScaleY(ogy);  //sets canvas scale to its original size
@@ -367,6 +374,7 @@ public class PaintApplication extends Application {
             save(file);
         }
         ((MyTab) tabpane.getSelectionModel().getSelectedItem()).setAutoSaveTimer(true); //resets autosave timer
+        LogHandler.getLogHandler().writeToLog(true, "Saved as.");
     }
     /**
      * Saves to the files of all currently opened tabs, iterating through each tab and asking the user to save as for files that have not yet been saved.
@@ -411,6 +419,7 @@ public class PaintApplication extends Application {
         currentCanvas.setScaleY(1);
         createTab();                           //creates a new tab with this canvas
         currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
+        LogHandler.getLogHandler().writeToLog(true, "New canvas created.");
     }
     /**
      * Completes the setup which allows user to zoom/scale the screen with the mouse.
@@ -446,6 +455,7 @@ public class PaintApplication extends Application {
         //sp.setContent(currentCanvas);
         zoom();                                     //gets zoom controls working again
         updateTab(tab);
+        LogHandler.getLogHandler().writeToLog(true, "New tab created.");
     }
     /**
      * Updates a tab's name in the visible GUI.
@@ -459,6 +469,7 @@ public class PaintApplication extends Application {
      * @param event reference to the exiting event
      */
     public void exitProgramWarning(WindowEvent event){
+        LogHandler.getLogHandler().writeToLog(false, "User attempted to exit program.");
         boolean allClean = true;
         for (Tab tabs:
              tabpane.getTabs()) {

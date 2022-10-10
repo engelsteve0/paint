@@ -61,6 +61,7 @@ public class UndoRedoButton extends Button {
                 currentCanvas.getGraphicsContext2D().clearRect(0, 0, image.getWidth(), image.getHeight());
                 currentCanvas.getGraphicsContext2D().drawImage(image, 0, 0, image.getWidth(), image.getHeight()); //actually draws image
                 currentCanvas.setDirty(true);
+                LogHandler.getLogHandler().writeToLog(true, "Undo Successful.");
             }
         }
         catch(Exception e){}
@@ -82,6 +83,7 @@ public class UndoRedoButton extends Button {
                 currentCanvas.getGraphicsContext2D().clearRect(0, 0, image.getWidth(), image.getHeight());
                 currentCanvas.getGraphicsContext2D().drawImage(image, 0, 0, image.getWidth(), image.getHeight()); //actually draws image
                 currentCanvas.setDirty(true);
+                LogHandler.getLogHandler().writeToLog(true, "Redo Successful.");
             }
         }
         catch(Exception e){}
