@@ -25,11 +25,8 @@ import javafx.stage.*;
 
 import javax.imageio.ImageIO;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javafx.embed.swing.SwingFXUtils;
-
-import static java.lang.Thread.currentThread;
 
 /**@author Steven Engel
 @PaintApplication.java:
@@ -56,6 +53,7 @@ public class PaintApplication extends Application {
     private static BufferedImage renderedImage;
     private static String extension;
     private static int autoSaveDuration = 300;                  //stores autosave duration in seconds
+    private static MyMenu menu;
     @Override
     public void start(Stage stage) throws IOException {
         //sets up the log handler
@@ -97,7 +95,7 @@ public class PaintApplication extends Application {
                 }
         );
 
-        MyMenu menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
+        this.menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
         this.undoButton = new UndoRedoButton(true, new Image(PaintApplication.class.getResourceAsStream("/tools/undo.png")), 16, 16);
         undoButton.setTooltip(new Tooltip("Undo (CTRL + Z)"));
         this.redoButton = new UndoRedoButton(false, new Image(PaintApplication.class.getResourceAsStream("/tools/redo.png")), 16, 16);
@@ -175,7 +173,8 @@ public class PaintApplication extends Application {
     public static Stage getStage() { //accessor method for stage in case anything external needs it. Will expand these for others as more classes branch out and need them
         return stage;
     }
-    public static MyCanvas getCanvas() { return currentCanvas;};
+    public static MyCanvas getCanvas() { return currentCanvas;}
+    public static MyMenu getMenu() { return menu;}
     public static MyToolbar getToolbar() { return toolbar;}
     public static ScrollPane getScrollPane() {return sp;}
     public static TabPane getTabPane() {return tabpane;}
@@ -524,6 +523,7 @@ public class PaintApplication extends Application {
                     tabpane.getTabs()) {
                 ((MyTab) tabs).stopAutoSaveTimer();         //stops all autosave timer threads to ensure that the entire application closes
             }
+            LogHandler.stopThread();
         }
     }
 }

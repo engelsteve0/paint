@@ -45,6 +45,10 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         autoSaveDD.setOnAction(e -> {
             createAutoSavePopup();
         });
+        MenuItem deleteLogsDD = new MenuItem("Clear Logs Directory");   //clears logs directory except for current log
+        deleteLogsDD.setOnAction(e -> {
+            LogHandler.cleanLogDir();
+        });
         SeparatorMenuItem s2 = new SeparatorMenuItem();
         MenuItem exitDD = new MenuItem("Exit");             //exits the application
         exitDD.setOnAction(e -> {
@@ -52,7 +56,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
             window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
         });
 
-        fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, saveAllDD, autoSaveDD, s2, exitDD);    //adds controls to fileMenu
+        fileMenu.getItems().addAll(newDD, openDD, s1, saveDD, saveAsDD, saveAllDD, autoSaveDD, s2, deleteLogsDD, exitDD);    //adds controls to fileMenu
 
         Menu viewMenu = new Menu("View");
         MenuItem fullScreenDD = new MenuItem("Toggle Full Screen (F11)");        //toggle fullscreen
@@ -118,7 +122,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         });
         MenuItem flipCanvasDD = new MenuItem("Flip/Mirror Canvas");    //opens window letting user clear
         flipCanvasDD.setOnAction(e -> {
-            createRotateCanvasPopup();
+            createFlipCanvasPopup();
         });
         editMenu.getItems().addAll(undoDD, redoDD, s3, cutDD, copyDD, pasteDD, s4, resizeDD, clearCanvasDD, s5, rotateCanvasDD, flipCanvasDD);
         Menu helpMenu = new Menu("Help");
@@ -131,6 +135,8 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         this.getMenus().addAll(fileMenu, editMenu, viewMenu, helpMenu); //adds all menus to menubar
 
     }
+
+
 
     /**
      * Creates an informational popup, with just a title, text, and a close button.
@@ -207,20 +213,9 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         Button applyButton = new Button("Apply");
         applyButton.setOnAction(e->{
             MyCanvas currentCanvas = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas();
-            double ogx = currentCanvas.getScaleX();//stores original x and y scales to reset after save
-            double ogy = currentCanvas.getScaleY();
-            currentCanvas.setScaleX(1);            //briefly sets canvas scale to default to avoid errors
-            currentCanvas.setScaleY(1);
-            WritableImage writableImage = new WritableImage((int) currentCanvas.getWidth(), (int) currentCanvas.getHeight());
-            currentCanvas.snapshot(null, writableImage);
-            currentCanvas.setHeight(yValue.doubleValue());   //resizes canvas, sets dirty status
-            currentCanvas.setWidth(xValue.doubleValue());
-            currentCanvas.setDirty(true);
-            currentCanvas.getGraphicsContext2D().drawImage(writableImage, 0, 0, xValue.doubleValue(), yValue.doubleValue());
-            currentCanvas.setScaleX(ogx);            //resets canvas scale
-            currentCanvas.setScaleY(ogy);
-            currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
+            PaintApplication.getToolbar().resizeCanvas(xValue.intValue(), yValue.intValue(), true);
             LogHandler.getLogHandler().writeToLog(true, "Canvas resized to " + xValue + "x" + yValue);
+            currentCanvas.updateUndoStack();       //updates undo stack to retain initial copy of image
             dialog.close();
         });
         Button cancelButton = new Button("Cancel");
@@ -351,25 +346,22 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.initOwner(PaintApplication.getStage());
         dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
         Button toggleButton = new Button();
-        Label autoSaveDesc = new Label("Enter the number of degrees to rotate by and choose whether this should apply to the whole canvas or selection:");   //informs user about autosave
+        Label rotateDesc = new Label("Enter the number of degrees to rotate by and choose whether this should apply to the whole canvas or selection:");   //informs user about autosave
         AtomicBoolean wholeCanvas = new AtomicBoolean(true);
         if(wholeCanvas.get()){
             toggleButton.setText("Whole Canvas");
         }
         else
             toggleButton.setText("Selection");
-        toggleButton.setOnAction(e->{                                    //master enable/disable for autosave
+        toggleButton.setOnAction(e->{                                    //enable/disable whole canvas rotation vs. selection
             if(wholeCanvas.get()){
                 wholeCanvas.set(false);
                 toggleButton.setText("Selection");            //changes text to let user know whether it is currently enabled or disabled
             }
-
             else{
                 wholeCanvas.set(true);
                 toggleButton.setText("Whole Canvas");            //changes text to let user know whether it is currently enabled or disabled
-            }
-
-        });
+            }});
 
         AtomicInteger rotationValue = new AtomicInteger(90);
         TextField rotationInput = new TextField(String.valueOf(rotationValue.get()));
@@ -398,9 +390,45 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
             dialog.close();
         });
         HBox buttonsBox = new HBox(saveButton, closeButton);
-        VBox bigBox = new VBox(autoSaveDesc, toggleButton, rotationHBox, buttonsBox);
+        VBox bigBox = new VBox(rotateDesc, toggleButton, rotationHBox, buttonsBox);
         bigBox.setSpacing(10);      //ensures buttons aren't right on top of each other
         Scene dialogScene = new Scene(bigBox, 600, 200);
+        dialog.setScene(dialogScene);                   //displays window to user
+        dialog.show();
+    }
+
+    /**
+     * Creates a specialized popup for allowing the user to flip/mirror the canvas
+     */
+    public void createFlipCanvasPopup() {
+        final Stage dialog = new Stage();                               //creates a new window
+        dialog.setTitle("Flip/Mirror Settings");
+        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
+        dialog.initOwner(PaintApplication.getStage());
+        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        Label desc = new Label("Choose what type of flip (or mirror) you would like to apply to the current canvas: ");   //informs user about options
+
+        Button mirrorButton = new Button("Mirror Image");
+        mirrorButton.setOnAction(e->{
+            PaintApplication.getToolbar().flipImage(false);  //flips both vertically and horizontally to create a mirror image this
+            PaintApplication.getToolbar().flipImage(true);
+        });
+        Button flipHorButton = new Button("Flip horizontally (over vertical axis)");
+        flipHorButton.setOnAction(e->{
+            PaintApplication.getToolbar().flipImage(true);  //flips horizontally
+        });
+        Button flipVerButton = new Button("Flip vertically (over horizontal axis)");
+        flipVerButton.setOnAction(e->{
+            PaintApplication.getToolbar().flipImage(false);  //flips vertically
+        });
+        Button closeButton = new Button("Close");
+        closeButton.setOnAction(e->{                                   //closes this dialog
+            dialog.close();
+        });
+        HBox buttonsBox = new HBox(mirrorButton, flipHorButton, flipVerButton, closeButton);
+        VBox bigBox = new VBox(desc, buttonsBox);
+        bigBox.setSpacing(10);      //ensures buttons aren't right on top of each other
+        Scene dialogScene = new Scene(bigBox, 600, 100);
         dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
     }

@@ -55,6 +55,28 @@ public class LogHandler extends Thread{
         lh.writeToLog(false,"Log file created: " + logFile.getName()); //This log file has been created. Does not need filename because log is global.
     }
 
+    /**
+     * Attempts to clean out the log directory, deleting all logs except for the current log
+     */
+    public static void cleanLogDir(){
+        String userHome =  System.getProperty("user.home"); //gets user's home directory
+        File dir = new File(userHome + "/paint/logs/"); //gets log directory
+        for (File file: dir.listFiles()) {
+            if(file.equals(logFile)) {      //if this is the log file currently being worked on...
+                //do nothing
+            } else {                        //otherwise...
+                //delete file
+                file.delete();
+            }
+
+        }
+    }
+    /**
+     * Stops any threads currently running
+     */
+    public static void stopThread(){
+        lh.interrupt();
+    }
     class logWriter implements Runnable{
         private boolean addFileName;
         private String text;
@@ -97,4 +119,5 @@ public class LogHandler extends Thread{
         runnableQueue.add(lw);
         lh.run();       //runs thread on-demand
     }
+
 }

@@ -26,7 +26,11 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -47,6 +51,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -149,11 +156,43 @@ public class MyToolbar extends ToolBar {
         Separator s2 = new Separator(Orientation.VERTICAL);                       //adds a separator between size and color picker section
 
         this.cp = new ColorPicker(Color.BLACK);               //creates a new color picker. To be used with tools
-        Separator s3 = new Separator(Orientation.VERTICAL);
-        this.getItems().addAll(toolVBox, s1, sizeSelector, s2, cp, s3);         //adds items to toolbar
         cp.setOnAction((EventHandler) t -> selectedColor = cp.getValue());
         cp.setTooltip(new Tooltip("Color Picker"));
+        Separator s3 = new Separator(Orientation.VERTICAL);
 
+        Label transformationLabel = new Label("Transformations");
+        Button rotateButton = new Button();             //adds buttons for transformations
+        ImageView rotateImage = new ImageView(new Image(PaintApplication.class.getResourceAsStream("/tools/rotate.png")));
+        rotateImage.setFitHeight(16);
+        rotateImage.setFitWidth(16);
+        rotateImage.setPreserveRatio(true);
+        rotateButton.setGraphic(rotateImage);
+        rotateButton.setTooltip(new Tooltip("Rotate Canvas/Selection"));
+        rotateButton.setOnAction(e->{ PaintApplication.getMenu().createRotateCanvasPopup();});        //creates the rotate canvas popup
+
+        Button flipButton = new Button();
+        ImageView flipImage = new ImageView(new Image(PaintApplication.class.getResourceAsStream("/tools/flip.png")));
+        flipImage.setFitHeight(16);
+        flipImage.setFitWidth(16);
+        flipImage.setPreserveRatio(true);
+        flipButton.setGraphic(flipImage);
+        flipButton.setTooltip(new Tooltip("Flip/Mirror Canvas"));
+        flipButton.setOnAction(e->{ PaintApplication.getMenu().createFlipCanvasPopup();});        //creates the flip/mirror popup
+
+        Button resizeButton = new Button();
+        ImageView resizeImage = new ImageView(new Image(PaintApplication.class.getResourceAsStream("/tools/resize.png")));
+        resizeImage.setFitHeight(16);
+        resizeImage.setFitWidth(16);
+        resizeImage.setPreserveRatio(true);
+        resizeButton.setGraphic(resizeImage);
+        resizeButton.setTooltip(new Tooltip("Resize Canvas"));
+        resizeButton.setOnAction(e->{ PaintApplication.getMenu().createResizePopup();});        //creates the resize popup
+
+        HBox transformationHBox = new HBox(rotateButton, flipButton, resizeButton);
+        VBox transformationVBox = new VBox(transformationLabel, transformationHBox);
+        Separator s4 = new Separator(Orientation.VERTICAL);
+
+        this.getItems().addAll(toolVBox, s1, sizeSelector, s2, cp, s3, transformationVBox, s4);         //adds items to toolbar
         setupTools();
 
     }
@@ -601,7 +640,7 @@ public class MyToolbar extends ToolBar {
         layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.setFill(Color.WHITE);                                        //fills in canvas with white (slightly distinct from gray background)
-        gc.fillRect(thisTab.getImageSelection().getx1(), thisTab.getImageSelection().gety1(), thisTab.getImageSelection().getx1()+thisTab.getImageSelection().getw(), thisTab.getImageSelection().gety1()+thisTab.getImageSelection().geth());               //sets gc to canvas size
+        gc.fillRect(thisTab.getImageSelection().getx1(), thisTab.getImageSelection().gety1(), /*thisTab.getImageSelection().getx1()+*/thisTab.getImageSelection().getw(), /*thisTab.getImageSelection().gety1()+*/thisTab.getImageSelection().geth());               //sets gc to canvas size
         copyImage();            //first, copy the image. Then, leave blank rectangle behind on canvas and deselect
         thisTab.setSelection(0);    //set selection back to 0
         ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas().updateUndoStack();
@@ -625,23 +664,125 @@ public class MyToolbar extends ToolBar {
         }
         LogHandler.getLogHandler().writeToLog(true, "Selection pasted.");
     }
+    public void resizeCanvas(int width, int height, boolean stretchContent){
+        MyCanvas currentCanvas = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas();
+        MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
+        Canvas layer = thisTab.getCurrentLayer();
+        double ogx = currentCanvas.getScaleX();//stores original x and y scales to reset after save
+        double ogy = currentCanvas.getScaleY();
+        currentCanvas.setScaleX(1);            //briefly sets canvas scale to default to avoid errors
+        currentCanvas.setScaleY(1);
+        WritableImage writableImage = new WritableImage((int) currentCanvas.getWidth(), (int) currentCanvas.getHeight());
+        currentCanvas.snapshot(null, writableImage);
+        currentCanvas.setHeight(height);   //resizes canvas, sets dirty status
+        currentCanvas.setWidth(width);
+        layer.setHeight(height);
+        layer.setWidth(width);
+        currentCanvas.setDirty(true);
+        if(stretchContent)                  //if we want to stretch the content, actually redraw the content, otherwise don't
+            currentCanvas.getGraphicsContext2D().drawImage(writableImage, 0, 0, width, height);
+        currentCanvas.setScaleX(ogx);            //resets canvas scale
+        currentCanvas.setScaleY(ogy);
+    }
     public void rotateImage(int degreesCW, boolean wholeCanvas){
         MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
         MyCanvas canvas = thisTab.getCurrentCanvas();
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        if(wholeCanvas){
-            Image snapshot = canvas.snapshot(null, null);
-            gc.setFill(Color.WHITE);
-            gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());   //temporarily clears canvas to complete rotation
-
-            gc.save(); // Save default transform
-            Affine rotate = new Affine();       //creates a new rotation transform about the center of the canvas
-            rotate.appendRotation(degreesCW, canvas.getWidth()/2, canvas.getHeight()/2);
-            gc.setTransform(rotate);    //rotates about center of canvas
-            gc.drawImage(snapshot, 0, 0);
-            gc.restore(); // Restore default transform
+        Canvas layer = thisTab.getCurrentLayer();
+        GraphicsContext lgc = layer.getGraphicsContext2D();
+        boolean select = (!wholeCanvas&&selectedTool==8&&thisTab.getSelection()==1);  //boolean for quick reference to whether selection rotation is being done or not
+        double imw;
+        double imh;
+        double imx1;
+        double imy1;
+        if(select) {       //if this applies to only selection and a selection has been made, rotate only selection
+            imw = thisTab.getImageSelection().getw();    //stores width of selection
+            imh = thisTab.getImageSelection().geth();    //stores height of selection
+            imx1 = thisTab.getImageSelection().getx1();
+            imy1 = thisTab.getImageSelection().gety1();
         }
+        else{
+            imw = canvas.getWidth();    //stores width of selection
+            imh = canvas.getHeight();    //stores height of selection
+            imx1 = 0;
+            imy1 = 0;
+        }
+            double centerx = imx1+imw/2;
+            double centery = imy1+imh/2;    //stores center point of selection
+            double degreesCWR = Math.toRadians(degreesCW);  //converts to radians for trig methods
+            Point im1 = new Point((int)imx1, (int)imy1);
+            Point im2 = new Point((int)(imx1+imw), (int)imy1);  //4 points, starting with top left of selection and moving CW
+            Point im3 = new Point((int)(imx1+imw), (int)(imy1+imh));
+            Point im4 = new Point((int)(imx1), (int)(imy1+imh));
+            Point2D rotatedim1 = new Point2D.Double();
+            Point2D rotatedim2 = new Point2D.Double();
+            Point2D rotatedim3 = new Point2D.Double();
+            Point2D rotatedim4 = new Point2D.Double();
+            AffineTransform rotation = new AffineTransform();
+            rotation.rotate(-1*degreesCWR, centerx, centery);   //rotates ccw, so negative to compensate
+            rotation.transform(im1, rotatedim1);
+            rotation.transform(im2, rotatedim2);
+            rotation.transform(im3, rotatedim3);
+            rotation.transform(im4, rotatedim4);
+            double newimx1 = Math.min(Math.min(rotatedim1.getX(), rotatedim2.getX()),Math.min(rotatedim3.getX(), rotatedim4.getX()));
+            double newimy1 = Math.min(Math.min(rotatedim1.getY(), rotatedim2.getY()),Math.min(rotatedim3.getY(), rotatedim4.getY()));
+            double neww = Math.max(Math.max(rotatedim1.getX(), rotatedim2.getX()),Math.max(rotatedim3.getX(), rotatedim4.getX()))-newimx1;  //sets new widths and heights
+            double newh = Math.max(Math.max(rotatedim1.getY(), rotatedim2.getY()),Math.max(rotatedim3.getY(), rotatedim4.getY()))-newimy1;
+            SnapshotParameters sp = new SnapshotParameters();               //takes snapshot of selection on canvas
+            Rectangle2D boundsRect = new Rectangle2D(imx1, imy1, imw, imh);
+            sp.setViewport(boundsRect);
+            Image snapshot = canvas.snapshot(sp, null);
+            if(select){
+                lgc.clearRect(0, 0, layer.getWidth(), layer.getHeight());  //clears layer, copies selection to layer
+                lgc.drawImage(snapshot, imx1, imy1);
+                lgc.save(); // Save default transform
+                Affine rotate = new Affine();       //creates a new rotation transform about the center of the selection
+                rotate.appendRotation(degreesCW, centerx, centery);
+                lgc.setTransform(rotate);    //rotates about center of canvas
+                lgc.drawImage(snapshot, imx1, imy1);
+                lgc.restore(); // Restore default transform
+                Rectangle2D newBoundsRect = new Rectangle2D(newimx1, newimy1, neww, newh);
+                sp.setViewport(newBoundsRect);  //changes bounds to match bounds needed by rotation
+                Image snapshot2 = layer.snapshot(sp, null); //takes snapshot of changes to layer
+                gc.setFill(Color.WHITE);
+                gc.clearRect(imx1, imy1, imw, imh);   //clears old part of canvas this was rotated from
+                gc.fillRect(imx1, imy1, imw, imh);   //clears old part of canvas this was rotated from
+                gc.drawImage(snapshot2, newimx1, newimy1, neww, newh);  //draws rotated image on canvas
+                lgc.clearRect(0, 0, layer.getWidth(), layer.getHeight());  //clears layer after operation has completed
+                thisTab.setSelection(0);    //can no longer move selection
+            }
+
+            else{
+                int maxDim = (int)Math.max(neww, newh);
+                Image snapshot2 = canvas.snapshot(null, null);
+                resizeCanvas(maxDim*2, maxDim*2, false);  //resize canvas to max of both canvas's size to be safe, then resize again later if necessary
+                gc.setFill(Color.WHITE);
+                gc.fillRect(0, 0, neww, newh);   //clears old canvas
+                gc.save(); // Save default transform
+                Affine rotate = new Affine();       //creates a new rotation transform about the center of the selection
+                rotate.appendTranslation(-(newimx1-imx1), -(newimy1-imy1));
+                rotate.appendRotation(degreesCW, centerx, centery);
+                gc.setTransform(rotate);    //rotates about center of canvas
+                gc.drawImage(snapshot2, 0, 0);
+                gc.restore(); // Restore default transform
+                resizeCanvas((int)neww, (int)newh, false);
+            }
         canvas.updateUndoStack();
         LogHandler.getLogHandler().writeToLog(true, "Rotated " + degreesCW + " degrees clockwise.");
+    }
+    public void flipImage(boolean verticalAxis){
+        MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
+        MyCanvas canvas = thisTab.getCurrentCanvas();
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+
+        Image snapshot = canvas.snapshot(null, null);
+        gc.setFill(Color.WHITE);
+        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());   //temporarily clears canvas to complete flip
+        if(verticalAxis)    //do a flip over y axis
+            gc.drawImage(snapshot, canvas.getWidth(), 0, -1*canvas.getWidth(), canvas.getHeight()); //flips x
+        else
+            gc.drawImage(snapshot, 0, canvas.getHeight(), canvas.getWidth(), -1*canvas.getHeight()); //flips y
+        canvas.updateUndoStack();
+        LogHandler.getLogHandler().writeToLog(true, "Flipped canvas.");
     }
 }
