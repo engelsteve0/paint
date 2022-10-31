@@ -90,23 +90,64 @@ public class MyTab extends Tab{
         };
         autoSaveTimer.scheduleAtFixedRate(autoSaveTask, 0, 1000);   //run timer at 1s/s
     }
+
+    /**
+     * Sets the current canvas of this tab to be the parameter
+     * @param canvas the MyCanvas to assign to this tab
+     */
     public void setCurrentCanvas(MyCanvas canvas){  //setter/getter methods for canvas associated with this tab
         this.currentCanvas = canvas;
     }
+
+    /**
+     * Accessor for the current tab's canvas
+      * @return MyCanvas
+     */
     public MyCanvas getCurrentCanvas(){
         return currentCanvas;
     }
+
+    /**
+     * Accessor for the current overlay layer
+     * @return Canvas
+     */
     public Canvas getCurrentLayer(){
         return layer;
     }
+
+    /**
+     * Accessor for the current tab's "root" (a stackpane containing the canvas and overlay layer)
+     * @return StackPane
+     */
     public StackPane getCurrentRoot(){
         return root;
     }
+
+    /**
+     * Sets selection state as well as selection image stored
+     * @param selection int (selection state: 0, 1, 2)
+     * @param selectionImage Image (the image stored)
+     */
     public void setSelection(int selection, Image selectionImage) {imageSelection.setState(selection); imageSelection.setSelectionImage(selectionImage);}
+
+    /**
+     * Sets current state of image selection
+     * @param selection int: 0, 1, or 2
+     */
     public void setSelection(int selection){imageSelection.setState(selection);}
     public Image getSelectionImage(){return imageSelection.getSelectionImage();}
+
+    /**
+     * Accessor method for current state of image selection
+     * @return int
+     */
     public int getSelection() {return imageSelection.getState();}
     public ImageSelection getImageSelection(){return imageSelection;}
+
+    /**
+     * Sets the time left on the autosave timer
+     * @param s time left in seconds
+     */
     public void setTimeLeft(int s){timeLeft = s;}
 
     /**
@@ -141,7 +182,7 @@ public class MyTab extends Tab{
         dialog.initOwner(PaintApplication.getStage());
         dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
         VBox dialogVbox = new VBox(20);
-        Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
+        Font CS = new Font("Times New Roman", 12);
         Text t =  new Text(this.getTabName() + " has not been saved. Would you like to save your work?");
         t.setFont(CS);
         Button saveAllButton = new Button("Save"); //Gives user options for saving, not saving, or cancelling the operation

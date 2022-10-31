@@ -17,9 +17,9 @@ index name
 */
 package com.example.paint;
 
+import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -41,12 +41,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Polygon;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
-import javafx.scene.transform.Translate;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -72,10 +69,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @7     polygon
  * @8     select rectangle
  * @9     Cross/T/+
+ * @10    Text
  */
 public class MyToolbar extends ToolBar {
-    private double[] initialTouch; //tracks initial mouse x and y when drawing
-    private static final int numTools = 10;      //number of tools in tools array. Needs to be incremented to add tools
+    private double[] initialTouch;              //tracks initial mouse x and y when drawing
+    private static final int numTools = 11;     //number of tools in tools array. Needs to be incremented to add tools
     private static int selectedTool = -1;       //keeps track of which tool is selected. -1 for none selected
     private int sizeValue = 1;                  //keeps track of line width, shape outline size
     private ColorPicker cp;                     //allows user to choose colors for their shapes/lines
@@ -115,10 +113,12 @@ public class MyToolbar extends ToolBar {
         tools[8].setTooltip(new Tooltip("Rectangular/Square Selection Tool"));
         tools[9] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/axes.png")), 16, 16, 9 );
         tools[9].setTooltip(new Tooltip("Axes Tool"));
+        tools[10] = new ImageButton(new Image(PaintApplication.class.getResourceAsStream("/tools/text.png")), 16, 16, 10 );
+        tools[10].setTooltip(new Tooltip("Text Tool"));
         GridPane toolBox = new GridPane();
+        int j=0;
         for(int i=0; i<numTools; i++)
         {
-            int j=0;
             if(i>0 && i%10==0)                              //every 10th item, make a new row
                 j++;
             toolBox.add(tools[i], i%10, j);              //uses a gridpane to add tools. Can allow for multiple rows etc.
@@ -196,12 +196,19 @@ public class MyToolbar extends ToolBar {
         setupTools();
 
     }
+
+    /**
+     * Dummy constructor designed for unit testing, does nothing.
+     * @param yes useless parameter
+     */
     public MyToolbar(boolean yes) {}; //dummy constructor for unit testing
+
+    /**
+     * accessor for the currently selected tool (id)
+     * @return int
+     */
     public int getSelectedTool(){
         return selectedTool;
-    }
-    public Color getSelectedColor(){
-        return selectedColor;
     }
 
     /**
@@ -300,7 +307,64 @@ public class MyToolbar extends ToolBar {
                                     initialTouch[0] = event.getX();
                                     initialTouch[1] = event.getY();
                                 }
+                            }; break;
+                        case 10: {
+                            try{
+                                initialTouch[0] = event.getX(); //get coordinates, then create a prompt allowing user to enter text here
+                                initialTouch[1] = event.getY();
                             }
+                            catch (Exception e){};
+                                Stage dialog = new Stage();                               //creates a new window
+                                dialog.initStyle(StageStyle.UNDECORATED);                 //minimizes size of this window
+                                dialog.setTitle("Text Tool");
+                                dialog.initModality(Modality.APPLICATION_MODAL);
+                                dialog.initOwner(PaintApplication.getStage());
+                                dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+                                VBox dialogVbox = new VBox(20);
+                                String[] FontNames = Font.getFamilies().toArray(new String[0]);
+                                Font[] Fonts = new Font[FontNames.length];
+                                for(int i=0; i<FontNames.length; i++){
+                                    Fonts[i] = new Font(FontNames[i], sizeValue);  //creates an array of fonts corresponding to names array
+                                }
+                                Text t =  new Text("Enter text to be placed to upper right of location selected. \nFont size and color are controlled by the toolbar.");
+                                ComboBox<String> fontDropDown = new ComboBox<>(FXCollections.observableArrayList(FontNames));
+                                fontDropDown.getSelectionModel().select(0);
+                                fontDropDown.setCellFactory((ListView<String> listView) -> {
+                                final ListCell<String> cell = new ListCell<String>() {
+                                    @Override
+                                    public void updateItem(String item, boolean empty) {    //sets the text of the listed fonts in the dropdown to be the actual fonts
+                                        super.updateItem(item, empty);
+                                        if (item != null) {
+                                            setText(item);
+                                            setFont(new Font(item, 12));
+                                        }}};
+                                    return cell;});
+                                TextField tF = new TextField("Enter Text Here");
+                                Button applyButton = new Button("Add text to canvas"); //Gives user options for applying text or cancelling the operation
+                                applyButton.setOnAction(e->{
+                                    GraphicsContext gc = canvas.getGraphicsContext2D();
+                                    initDraw(gc);
+                                    int selectedFont = fontDropDown.getSelectionModel().getSelectedIndex();
+                                    gc.setFont(Fonts[selectedFont]); //sets canvas font
+                                    gc.setLineWidth(1);
+                                    gc.setFill(cp.getValue());
+                                    gc.strokeText(tF.getText(), initialTouch[0], initialTouch[1], canvas.getWidth()-initialTouch[0]); //Draws text on canvas, with the max width being the dist between x and canvas width
+                                    gc.fillText(tF.getText(), initialTouch[0], initialTouch[1], canvas.getWidth()-initialTouch[0]);
+                                    dialog.close();
+                                    canvas.updateUndoStack();       //updates undo stack when feature drawing is ended
+                                });
+                                Button cancelButton = new Button("Cancel");     //just get rid of the window
+                                cancelButton.setOnAction(e->{
+                                    dialog.close();
+                                });
+                                HBox options = new HBox();
+                                options.getChildren().addAll(applyButton, cancelButton);
+                                dialogVbox.getChildren().addAll(t, fontDropDown, tF, options);                //actually adds text, button to window
+                                Scene dialogScene = new Scene(dialogVbox, 450, 180);
+                                dialog.setScene(dialogScene);                   //displays window to user
+                                dialog.show();
+                                dialog.setResizable(false);                     //don't let user resize
+                        }
                     } if(selectedTool!=8) { //if using another tool, end selection
                         endDraw();
                         thisTab.setSelection(0);
@@ -409,7 +473,7 @@ public class MyToolbar extends ToolBar {
                             context.strokeLine(initialTouch[0], initialTouch[1], event.getX(), event.getY());
                             endDraw();
                             } break;
-                        case 5: case 6: case 7: case 9: {                   //square/circle/polygon/select
+                        case 5: case 6: case 7: case 9: {           //square/circle/polygon/select
                             initDraw(context);
                             double startx = initialTouch[0];        //handles drawing to areas other than to bottom right
                             double starty = initialTouch[1];
@@ -502,7 +566,7 @@ public class MyToolbar extends ToolBar {
                             }; break;
 
                     }
-                    if(selectedTool!=3&&selectedTool!=-1&&selectedTool!=8){
+                    if(selectedTool!=3&&selectedTool!=-1&&selectedTool!=8&&selectedTool!=10){
                         canvas.updateUndoStack();       //updates undo stack when feature drawing is ended
                     }
         });
@@ -608,13 +672,6 @@ public class MyToolbar extends ToolBar {
         MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
         MyCanvas canvas = thisTab.getCurrentCanvas();
         Canvas layer = thisTab.getCurrentLayer();
-        StackPane root = thisTab.getCurrentRoot();
-        /*if(!root.getChildren().contains(layer)) {
-            root.getChildren().removeAll(canvas, layer);            //removes children from stackpane
-            root.getChildren().addAll(canvas, layer);                   //adds canvas and overlay to a temporary stackpane to display both
-            root.setAlignment(Pos.TOP_LEFT);
-            PaintApplication.getScrollPane().setContent(root);
-        }*/
         layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
         layer.setWidth(canvas.getWidth());                          //resizes overlay to fit canvas as necessary
         layer.setHeight(canvas.getHeight());
@@ -664,6 +721,13 @@ public class MyToolbar extends ToolBar {
         }
         LogHandler.getLogHandler().writeToLog(true, "Selection pasted.");
     }
+
+    /**
+     * Resizes the canvas to fit the given width/height
+     * @param width int representing the new width of the canvas
+     * @param height int representing the new height of the canvas
+     * @param stretchContent whether to stretch the content of the canvas to fit the new size or not
+     */
     public void resizeCanvas(int width, int height, boolean stretchContent){
         MyCanvas currentCanvas = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas();
         MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
@@ -684,6 +748,12 @@ public class MyToolbar extends ToolBar {
         currentCanvas.setScaleX(ogx);            //resets canvas scale
         currentCanvas.setScaleY(ogy);
     }
+
+    /**
+     * Rotates the contents of the current canvas or a selection
+     * @param degreesCW int, the number of degrees to rotate the canvas by (CW)
+     * @param wholeCanvas boolean representing whether the whole canvas or just a selection should be rotated
+     */
     public void rotateImage(int degreesCW, boolean wholeCanvas){
         MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
         MyCanvas canvas = thisTab.getCurrentCanvas();
@@ -770,6 +840,11 @@ public class MyToolbar extends ToolBar {
         canvas.updateUndoStack();
         LogHandler.getLogHandler().writeToLog(true, "Rotated " + degreesCW + " degrees clockwise.");
     }
+
+    /**
+     * Flips the canvas.
+     * @param verticalAxis whether this should be about the vertical axis (horizontal) or not
+     */
     public void flipImage(boolean verticalAxis){
         MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
         MyCanvas canvas = thisTab.getCurrentCanvas();

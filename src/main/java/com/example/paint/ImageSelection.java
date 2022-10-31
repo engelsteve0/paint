@@ -17,9 +17,29 @@ public class ImageSelection {
     public ImageSelection(){    //empty constructor
 
     }
+
+    /**
+     * Sets the Image that is stored in this SelectionImage
+     * @param selectionImage Image
+     */
     public void setSelectionImage(Image selectionImage) {this.selectionImage = selectionImage;}
+
+    /**
+     * Sets the state (0, 1, 2) that this selection is in
+     * @param selection int
+     */
     public void setState(int selection){this.state = selection;}
+
+    /**
+     * Returns the state (0, 1, 2) that this selection is in
+     * @return int
+     */
     public int getState(){return state;}
+
+    /**
+     * Accessor for the actual image stored in this ImageSelection
+     * @return Image
+     */
     public Image getSelectionImage(){return selectionImage;}
 
     /**
@@ -35,8 +55,28 @@ public class ImageSelection {
         selectionCoordinates[2]=w;
         selectionCoordinates[3]=h;
     }
+
+    /**
+     * Accessor for the x value of this selection's origin
+     * @return double
+     */
     public double getx1(){return selectionCoordinates[0];}
+
+    /**
+     * Accessor for the y value of this selection's origin
+     * @return double
+     */
     public double gety1(){return selectionCoordinates[1];}
+
+    /**
+     * Accessor for the width of this selection
+     * @return double
+     */
     public double getw(){return selectionCoordinates[2];}
+
+    /**
+     * Accessor for the height of this selection
+     * @return double
+     */
     public double geth(){return selectionCoordinates[3];}
 }

@@ -5,7 +5,6 @@
 package com.example.paint;
 
 import javafx.scene.control.ToggleButton;
-import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
@@ -15,8 +14,6 @@ import javafx.scene.image.ImageView;
  * It also communicates to MyToolbar which tool has been selected to determine mouse functionality on the canvas.
  */
 public class ImageButton extends ToggleButton {
-
-    private int buttonId;
     private final String STYLE_NORMAL = "-fx-background-color: transparent; -fx-padding: 2, 2, 2, 2;"; //defines various styles
     private final String STYLE_PRESSED = "-fx-background-color: transparent; -fx-padding: 3 1 1 3;";   //pressed is not currently used but may be added for visual polish in the future
     private final String STYLE_SELECTED = "-fx-background-color: transparent; -fx-padding: 2, 2, 2, 2; -fx-border-color: orange; -fx-border-width: 1 1 1 1;";
@@ -54,6 +51,7 @@ public class ImageButton extends ToggleButton {
                     case 7: LogHandler.getLogHandler().writeToLog(true, "Polygon tool selected."); break;
                     case 8: LogHandler.getLogHandler().writeToLog(true, "Rectangular selection tool selected."); break;
                     case 9: LogHandler.getLogHandler().writeToLog(true, "Axes tool selected."); break;
+                    case 10: LogHandler.getLogHandler().writeToLog(true, "Text tool selected."); break;
                 }
             }
             else {

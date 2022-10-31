@@ -6,7 +6,6 @@ package com.example.paint;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -21,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Steven Engel
- * @MyMenu.java: This file houses much of the tedious GUI code needed to make the menubar across the top, as well as allowing for dialog popups for some of these options to be created.
+ * @MyMenu.java: This file houses much of the GUI code needed to make the menubar across the top, as well as allowing for dialog popups for some of these options to be created.
  */
 public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which contains Menus, which dropdown and contain MenuItems
     /**
@@ -29,6 +28,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
      */
     public MyMenu(){
         super();
+
         Menu fileMenu = new Menu("File"); //creates the menu bar across the top. Menus are subject to change.
         MenuItem newDD = new MenuItem("New (Ctrl + N)");    //Creates new, blank image. Keyboard shortcuts are implemented in PaintApplication.java
         newDD.setOnAction(e -> PaintApplication.newImage());
@@ -126,10 +126,10 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         });
         editMenu.getItems().addAll(undoDD, redoDD, s3, cutDD, copyDD, pasteDD, s4, resizeDD, clearCanvasDD, s5, rotateCanvasDD, flipCanvasDD);
         Menu helpMenu = new Menu("Help");
-        MenuItem helpDD = new MenuItem("Help");                     //saves to a user-specified location
+        MenuItem helpDD = new MenuItem("Help");
         helpDD.setOnAction(e -> createPopup("Help", "Hello and welcome to Paint!\nTo begin, open an existing image, or create a new 128x128 pixel canvas through the file menu.\nThen, select a tool in the toolbar and click on the canvas area to draw.\nBe sure to save your work frequently in the file menu!"));
-        MenuItem aboutDD = new MenuItem("About");                     //saves to a user-specified location
-        aboutDD.setOnAction(e -> createPopup("About", "Paint 0.0.8 is an all-purpose art program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, who is a Computer Engineer and Comic Sans enthusiast\n(but thankfully for the user, this is in Times New Roman)."));
+        MenuItem aboutDD = new MenuItem("About");
+        aboutDD.setOnAction(e -> createPopup("About", "Paint is an all-purpose art program for professional (pixel) artists, as well as complete amateurs.\nIt was written by Steven Engel, a Computer Engineer."));
         helpMenu.getItems().addAll(helpDD, aboutDD);
 
         this.getMenus().addAll(fileMenu, editMenu, viewMenu, helpMenu); //adds all menus to menubar
@@ -150,7 +150,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.initOwner(PaintApplication.getStage());
         dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
         VBox dialogVbox = new VBox(20);
-        Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
+        Font CS = new Font("Times New Roman", 12);
         Text t =  new Text(bodyText);
         t.setFont(CS);
         Button closeButton = new Button("Close");
@@ -171,11 +171,9 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.initOwner(PaintApplication.getStage());
         dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
         VBox dialogVbox = new VBox(20);
-        Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
+        Font CS = new Font("Times New Roman", 12);
         Text t =  new Text("Specify the new size of the canvas in x and y pixels: ");
         t.setFont(CS);
-        double oldX = PaintApplication.getCanvas().getWidth();
-        double oldY = PaintApplication.getCanvas().getHeight();
         AtomicInteger xValue = new AtomicInteger((int) PaintApplication.getCanvas().getWidth());
         AtomicInteger yValue = new AtomicInteger((int) PaintApplication.getCanvas().getHeight());
         Label xLabel = new Label("x: ");
@@ -237,7 +235,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.initOwner(PaintApplication.getStage());
         dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
         VBox dialogVbox = new VBox(20);
-        Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
+        Font CS = new Font("Times New Roman", 12);
         Text t =  new Text("This will cause the current canvas to be cleared and you will lose anything on said canvas. Are you sure you want to do this?");
         t.setFont(CS);
         Button clearButton = new Button("Clear Canvas");
@@ -256,9 +254,9 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.show();
     }
     /**
-     * Creates a 600x70 popup window specifically built for autosave settings.
+     * Creates a 600x200 popup window specifically built for autosave settings.
      */
-    public void createAutoSavePopup() {        //creates a 600x70 popup window specifically built for autosave settings
+    public void createAutoSavePopup() {        //creates a 600x200 popup window specifically built for autosave settings
         final Stage dialog = new Stage();                               //creates a new window
         dialog.setTitle("Autosave Settings");
         dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
@@ -337,9 +335,9 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
         dialog.show();
     }
     /**
-     * Creates a 600x70 popup window specifically built for rotation settings.
+     * Creates a 600x200 popup window specifically built for rotation settings.
      */
-    public void createRotateCanvasPopup() {        //creates a 600x70 popup window specifically built for rotation settings
+    public void createRotateCanvasPopup() {        //creates a 600x200 popup window specifically built for rotation settings
         final Stage dialog = new Stage();                               //creates a new window
         dialog.setTitle("Rotation Settings");
         dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
@@ -410,7 +408,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
 
         Button mirrorButton = new Button("Mirror Image");
         mirrorButton.setOnAction(e->{
-            PaintApplication.getToolbar().flipImage(false);  //flips both vertically and horizontally to create a mirror image this
+            PaintApplication.getToolbar().flipImage(false);  //flips both vertically and horizontally to create a mirror image of this
             PaintApplication.getToolbar().flipImage(true);
         });
         Button flipHorButton = new Button("Flip horizontally (over vertical axis)");

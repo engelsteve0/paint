@@ -36,12 +36,37 @@ public class MyCanvas extends Canvas{
         this.undoStack = new Stack<>();
         this.redoStack = new Stack<>();
     }
+
+    /**
+     * Accessor for the file that was last saved to from this canvas
+     * @return File
+     */
     public File getLastSaved() { return lastSaved;} //accessor/mutator methods for getting and setting the file that was last saved
+
+    /**
+     * Sets what file has last been saved to from this canvas
+     * @param file File
+     */
     public void setLastSaved(File file) {lastSaved = file;}
+
+    /**
+     * Returns whether this canvas is "dirty" (has been modified/touched)
+     * @return boolean
+     */
     public boolean getDirty() {return dirty;}
+
+    /**
+     * Accessor for the undo stack
+     * @return The undo stack
+     */
     public Stack<Image> getUndoStack(){
         return undoStack;
     }
+
+    /**
+     * Accessor for the redo stack
+     * @return The redo stack
+     */
     public Stack<Image> getRedoStack(){
         return redoStack;
     }

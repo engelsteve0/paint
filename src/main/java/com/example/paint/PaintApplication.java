@@ -55,7 +55,11 @@ public class PaintApplication extends Application {
     private static int autoSaveDuration = 300;                  //stores autosave duration in seconds
     private static MyMenu menu;
     @Override
+    /**
+     * Starts the application, effectively the "constructor"
+     */
     public void start(Stage stage) throws IOException {
+
         //sets up the log handler
         String dummyArgs[] = {""};
         LogHandler.main(dummyArgs);
@@ -70,12 +74,12 @@ public class PaintApplication extends Application {
         sp.setVisible(true);
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-        sp.setFitToHeight(true); //center
-        sp.setFitToWidth(true);  //center
-        sp.setPannable(true);  //allows user to pan through pane
+        sp.setFitToHeight(true);
+        sp.setFitToWidth(true);
+        sp.setPannable(true);                               //allows user to pan through pane
         layout.setCenter(sp);
-        layout.setAlignment(sp, Pos.CENTER); //starts with a blank slate
-        newImage();
+        layout.setAlignment(sp, Pos.CENTER);
+        newImage();                                         //starts with a blank slate
         tabpane.getSelectionModel().selectedItemProperty().addListener(         //if user has switched tab,
                 (ov, t, t1) -> {
                     currentCanvas = ((MyTab) t1).getCurrentCanvas();            //change canvas to that tab's canvas
@@ -107,7 +111,7 @@ public class PaintApplication extends Application {
         image.setFitHeight(16);
         image.setPreserveRatio(true);                           //gets buttons to display properly
         saveButton.setGraphic(image);
-        saveButton.setOnAction(e->{        //behavior for when this is pressed
+        saveButton.setOnAction(e->{        //Saves when save button is pressed
             save(currentCanvas.getLastSaved());
         });
         this.autoSaveTimer = new Label("");
@@ -123,7 +127,6 @@ public class PaintApplication extends Application {
         stage.setResizable(true);
         stage.show(); //Displays stage which hosts the scene which hosts the grid which hosts the canvas which hosts the gc
 
-        //this.zoom();  //sets up zoom properties
         stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, this::exitProgramWarning);
         //This section houses the keyboard shortcuts.
         scene.setOnKeyReleased(new EventHandler<KeyEvent>() {       //implements save with ctrl + s
@@ -160,34 +163,107 @@ public class PaintApplication extends Application {
                     getStage().setFullScreen(!PaintApplication.getStage().isFullScreen());
                 }
             }});
+
     }
 
     /**
-     * Simply launches the application. That should be all that this method does.
+     * Launches the JavaFX application.
      * @param args
      */
     public static void main(String[] args) {
-        launch();       //launches the application! :)
-    }
+        launch();}       //Launches the application
 
+    /**
+     * Accessor for the main stage
+     * @return Stage
+     */
     public static Stage getStage() { //accessor method for stage in case anything external needs it. Will expand these for others as more classes branch out and need them
         return stage;
     }
+
+    /**
+     * Accessor for the canvas of the currently selected tab
+     * @return MyCanvas
+     */
     public static MyCanvas getCanvas() { return currentCanvas;}
+
+    /**
+     * Accessor for the menu
+     * @return MyMenu
+     */
     public static MyMenu getMenu() { return menu;}
+
+    /**
+     * Accessor for the toolbar
+     * @return MyToolbar
+     */
     public static MyToolbar getToolbar() { return toolbar;}
+
+    /**
+     * Accessor for the ScrollPane (contains canvas, overlay)
+     * @return ScrollPane
+     */
     public static ScrollPane getScrollPane() {return sp;}
+
+    /**
+     * Accessor for the tabpane
+     * @return TabPane
+     */
     public static TabPane getTabPane() {return tabpane;}
+
+    /**
+     * Returns whether nightMode is enabled or not
+     * @return boolean
+     */
     public static boolean getNightMode(){return nightMode;}
     public static void setNightMode(boolean nM){nightMode=nM;}
+
+    /**
+     * Returns whether autosave is enabled or not
+     * @return boolean
+     */
     public static boolean getEnableAutoSave(){return enableAutoSave;}
+
+    /**
+     * Sets whether autosave itself is enabled or not
+     * @param eAS boolean controlling whether autosave should be enabled (true) or not (false)
+     */
     public static void setEnableAutoSave(boolean eAS){enableAutoSave = eAS;}
+
+    /**
+     * Returns the label representing the graphical display of the autosave timer
+     * @return Label
+     */
     public static Label getAutoSaveTimer(){return autoSaveTimer;}
+
+    /**
+     * Sets whether the autosave timer is set or not
+     * @param set if yes, show autosave timer
+     */
     public static void setDisplayAutoSaveTimer(boolean set){showAutoSaveTimer = set;}
+
+    /**
+     * Returns the boolean controlling whether the autosave timer should be shown or not
+     * @return boolean
+     */
     public static boolean getDisplayAutoSaveTimer(){return showAutoSaveTimer;}
 
+    /**
+     * Returns the overall scene for the application
+     * @return Scene
+     */
     public static Scene getScene() {return scene;}
+
+    /**
+     * Gets the length between autosaves, in seconds
+     * @return int
+     */
     public static int getAutoSaveDuration(){return autoSaveDuration;}
+
+    /**
+     * Sets the length between autosaves in seconds
+     * @param asD length between autosaves, in seconds
+     */
     public static void setAutoSaveDuration(int asD){autoSaveDuration = asD;}
     /**
      * This method increments tabsClosed to keep track of tabs closed for smart save on close
@@ -197,9 +273,17 @@ public class PaintApplication extends Application {
             System.exit(0);                                    //exit if all tabs have been dealt with
         }
     }
+
+    /**
+     * Calls the undo function through the undoButton
+     */
     public static void undo(){      //used to undo/redo (for functions outside this class)
         undoButton.undo();
     }
+
+    /**
+     * Calls the redo function through the redoButton
+     */
     public static void redo(){
         redoButton.redo();
     }
