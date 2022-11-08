@@ -51,25 +51,23 @@ import javafx.stage.StageStyle;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Steven Engel
- * @MyToolbar.java
  * This file houses the functionality and GUI for the toolbar and various tools. The tools[] array contains ImageButtons which represent each of the tools in the tools array:
- * @index name
- * @0     pencil
- * @1     eraser
- * @2     line
- * @3     picker
- * @4     dashed line
- * @5     square
- * @6     circle
- * @7     polygon
- * @8     select rectangle
- * @9     Cross/T/+
- * @10    Text
+ * index, name
+ * 0     pencil
+ * 1     eraser
+ * 2     line
+ * 3     picker
+ * 4     dashed line
+ * 5     square
+ * 6     circle
+ * 7     polygon
+ * 8     select rectangle
+ * 9     Cross/T/+
+ * 10    Text
  */
 public class MyToolbar extends ToolBar {
     private double[] initialTouch;              //tracks initial mouse x and y when drawing
@@ -233,7 +231,7 @@ public class MyToolbar extends ToolBar {
         MyCanvas canvas = thisTab.getCurrentCanvas();
         Canvas layer = thisTab.getCurrentLayer();
         StackPane root = thisTab.getCurrentRoot();
-        AtomicBoolean rightClick = new AtomicBoolean(false);                           //adds event filter preventing right clicks
+        //adds event filter preventing right clicks
         root.addEventHandler(MouseEvent.MOUSE_PRESSED,
                 event -> {
                     GraphicsContext context = layer.getGraphicsContext2D();
@@ -408,26 +406,24 @@ public class MyToolbar extends ToolBar {
                                 starty = event.getY();
                                 endy = initialTouch[1];
                             }
-                            if(selectedTool==5){ //square/rect or selectrect
-                                if(event.isShiftDown()) //if shift is down, always draw a square
-                                    context.strokeRect(startx, starty, endx-startx, endx-startx);
-                                else                    //otherwise, freeform rectangle
-                                    context.strokeRect(startx, starty, endx-startx, endy-starty);
-                            }
-                            else if(selectedTool==6){ //circle/oval
-                                if(event.isShiftDown()) //if shift is down, always draw a perfect circle
-                                    context.strokeOval(startx, starty, endx-startx, endx-startx);
-                                else                    //otherwise, freeform oval
-                                    context.strokeOval(startx, starty, endx-startx, endy-starty);
-                            }
-                            else if(selectedTool==7){ //polygon
-                                double[] xSides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, true);    //specialized method for getting points
-                                double[] ySides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, false);
-                                context.strokePolygon(xSides, ySides, polygonSides);
-                            }
-                            else if(selectedTool==9){ //cross/t
-                                context.strokeLine(initialTouch[0], (initialTouch[1]+event.getY())/2, event.getX(), (initialTouch[1]+event.getY())/2);
-                                context.strokeLine((initialTouch[0]+event.getX())/2, initialTouch[1], (initialTouch[0]+event.getX())/2, event.getY());
+                            switch (selectedTool){
+                                case 5:
+                                    if(event.isShiftDown()) //if shift is down, always draw a square
+                                        context.strokeRect(startx, starty, endx-startx, endx-startx);
+                                    else                    //otherwise, freeform rectangle
+                                        context.strokeRect(startx, starty, endx-startx, endy-starty);; break;
+                                case 6:
+                                    if(event.isShiftDown()) //if shift is down, always draw a perfect circle
+                                        context.strokeOval(startx, starty, endx-startx, endx-startx);
+                                    else                    //otherwise, freeform oval
+                                        context.strokeOval(startx, starty, endx-startx, endy-starty); break;
+                                case 7:
+                                    double[] xSides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, true);    //specialized method for getting points
+                                    double[] ySides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, false);
+                                    context.strokePolygon(xSides, ySides, polygonSides); break;
+                                case 9:
+                                    context.strokeLine(initialTouch[0], (initialTouch[1]+event.getY())/2, event.getX(), (initialTouch[1]+event.getY())/2);
+                                    context.strokeLine((initialTouch[0]+event.getX())/2, initialTouch[1], (initialTouch[0]+event.getX())/2, event.getY()); break;
                             }
                         } break;
                         case 8: {
@@ -487,28 +483,26 @@ public class MyToolbar extends ToolBar {
                                 starty = event.getY();
                                 endy = initialTouch[1];
                             }
-                            if(selectedTool==5){ //square/rect
-                                if(event.isShiftDown()) //if shift is down, always draw a square
-                                    context.strokeRect(startx, starty, endx-startx, endx-startx);
-                                else                    //otherwise, freeform rectangle
-                                    context.strokeRect(startx, starty, endx-startx, endy-starty);
+                            switch (selectedTool){
+                                case 5:
+                                    if(event.isShiftDown()) //if shift is down, always draw a square
+                                        context.strokeRect(startx, starty, endx-startx, endx-startx);
+                                    else                    //otherwise, freeform rectangle
+                                        context.strokeRect(startx, starty, endx-startx, endy-starty); break;
+                                case 6:
+                                    if(event.isShiftDown()) //if shift is down, always draw a perfect circle
+                                        context.strokeOval(startx, starty, endx-startx, endx-startx);
+                                    else                    //otherwise, freeform oval
+                                        context.strokeOval(startx, starty, endx-startx, endy-starty); break;
+                                case 7:
+                                    double[] xSides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, true);    //specialized method for getting points
+                                    double[] ySides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, false);
+                                    context.strokePolygon(xSides, ySides, polygonSides); break;
+                                case 9:
+                                    context.strokeLine(initialTouch[0], (initialTouch[1]+event.getY())/2, event.getX(), (initialTouch[1]+event.getY())/2);
+                                    context.strokeLine((initialTouch[0]+event.getX())/2, initialTouch[1], (initialTouch[0]+event.getX())/2, event.getY()); break;
                             }
-                            else if(selectedTool==6){ //circle/oval
-                                if(event.isShiftDown()) //if shift is down, always draw a perfect circle
-                                    context.strokeOval(startx, starty, endx-startx, endx-startx);
-                                else                    //otherwise, freeform oval
-                                    context.strokeOval(startx, starty, endx-startx, endy-starty);
-                            }
-                            else if(selectedTool==7){ //polygon
-                                double[] xSides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, true);    //specialized method for getting points
-                                double[] ySides = getPolygonSides(initialTouch[0], initialTouch[1], endx-startx, polygonSides, false);
-                                context.strokePolygon(xSides, ySides, polygonSides);
-                            }
-                            else if(selectedTool==9){//cross/t
-                                context.strokeLine(initialTouch[0], (initialTouch[1]+event.getY())/2, event.getX(), (initialTouch[1]+event.getY())/2);
-                                context.strokeLine((initialTouch[0]+event.getX())/2, initialTouch[1], (initialTouch[0]+event.getX())/2, event.getY());
-                            }
-                                endDraw();
+                            endDraw();
                         } break;
                         case 8: {       //select rectangle
                             context = layer.getGraphicsContext2D();
@@ -588,12 +582,9 @@ public class MyToolbar extends ToolBar {
      * Handles end of preview-draw sequence, clearing overlay layer.
      */
     public void endDraw(){      //handles end of preview-draw sequence
-        //PaintApplication.getScrollPane().setContent(canvas);    //sets scrollpane's content back to just canvas
         try {
             Canvas layer = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentLayer();
-            StackPane root = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentRoot();
             layer.getGraphicsContext2D().clearRect(0, 0, layer.getWidth(), layer.getHeight()); //clears layer
-            //root.getChildren().removeAll(canvas, layer);        //removes children from stackpane
         }
         catch(Exception e){}
     }
@@ -627,11 +618,7 @@ public class MyToolbar extends ToolBar {
      * Creates a new dialog prompting the user to enter the number of sides (>=3).
      */
     public void promptNumSides(){                                       //creates a dialog prompting user for number of sides
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle("Draw Regular Polygon");
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.initStyle(StageStyle.UNDECORATED);
+        final CustomPrompt dialog = new CustomPrompt(false, "Draw Regular Polygon", false);                               //creates a new window
         VBox dialogVbox = new VBox(20);
         Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
         Text t =  new Text("Specify the number of sides on the regular polygon: ");
@@ -849,7 +836,6 @@ public class MyToolbar extends ToolBar {
         MyTab thisTab = ((MyTab) PaintApplication.getTabPane().getSelectionModel().getSelectedItem());
         MyCanvas canvas = thisTab.getCurrentCanvas();
         GraphicsContext gc = canvas.getGraphicsContext2D();
-
         Image snapshot = canvas.snapshot(null, null);
         gc.setFill(Color.WHITE);
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());   //temporarily clears canvas to complete flip

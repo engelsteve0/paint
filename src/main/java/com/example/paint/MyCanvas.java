@@ -15,7 +15,7 @@ import java.util.Stack;
 
 /**
  * @author Steven Engel
- * @MyCanvas.java
+ *
  * This class provides a way for each canvas to store data associated with it, such as the file being worked on.
  */
 public class MyCanvas extends Canvas{

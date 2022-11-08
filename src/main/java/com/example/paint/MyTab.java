@@ -16,16 +16,13 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
  * @author Steven Engel
- * @MyTab.java: The MyTab class is a tab which stores extra information, such as the canvas assigned to it, as well as overriding the exit method to warn user to save their work
+ * The MyTab class is a tab which stores extra information, such as the canvas assigned to it, as well as overriding the exit method to warn user to save their work
  */
 public class MyTab extends Tab{
     private MyCanvas currentCanvas;         //stores reference to canvas associated with this tab
@@ -175,12 +172,7 @@ public class MyTab extends Tab{
      * @param individualClose Is this being closed from a tabpane itself (true) or application exit (false)?
      */
     public void savePrompt(boolean individualClose){              //boolean checks if this is being closed from tabpane or from application exit
-        Stage dialog = new Stage();                               //creates a new window
-        dialog.initStyle(StageStyle.UNDECORATED);                 //Looks ugly, but prevents user from messing up tab counts with x button for aware save
-        dialog.setTitle("Unsaved Work");
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        CustomPrompt dialog = new CustomPrompt(false, "Unsaved Work", false);                               //creates a new window
         VBox dialogVbox = new VBox(20);
         Font CS = new Font("Times New Roman", 12);
         Text t =  new Text(this.getTabName() + " has not been saved. Would you like to save your work?");
@@ -195,7 +187,6 @@ public class MyTab extends Tab{
                 PaintApplication.incrementTabsClosed();
             }
             dialog.close();
-
         });
         Button closeButton = new Button("Don't Save");  //close tab without saving
         closeButton.setOnAction(e->{
@@ -219,7 +210,6 @@ public class MyTab extends Tab{
         Scene dialogScene = new Scene(dialogVbox, 450, 60);
         dialog.setScene(dialogScene);                   //displays window to user
         dialog.show();
-        dialog.setResizable(false);                     //don't let user resize; this is just an alert window
     }
 
     /**

@@ -11,7 +11,7 @@ import java.util.Stack;
 
 /**
  * @author Steven Engel
- * @UndoRedoButton.java: A special class for the undo and redo buttons and their associated behavior. Extends a normal button
+ * A special class for the undo and redo buttons and their associated behavior. Extends a normal button
  */
 public class UndoRedoButton extends Button {
     private boolean isUndo; //if true, this is an undo button; if false, a redo
@@ -76,7 +76,6 @@ public class UndoRedoButton extends Button {
             if(!rS.isEmpty()){
                 Image image = rS.pop();           //pops top item from redo stack, places in undo stack
                 uS.push(image);
-                //image = rS.peek();
                 MyCanvas currentCanvas = ((MyTab)PaintApplication.getTabPane().getSelectionModel().getSelectedItem()).getCurrentCanvas();
                 currentCanvas.setHeight(image.getHeight());        //adjust canvas according to image size
                 currentCanvas.setWidth(image.getWidth());

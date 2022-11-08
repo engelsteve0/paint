@@ -4,8 +4,6 @@
 //while writeToLog can be called from anywhere.
 package com.example.paint;
 
-import javafx.concurrent.Task;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,7 +13,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author Steven Engel
- * @LogHandler.java: This class handles all of the logging/threading for said logging. The setup function serves as a constructor and is called in main
+ * This class handles all of the logging/threading for said logging. The setup function serves as a constructor and is called in main
  * while writeToLog can be called from anywhere.
  */
 public class LogHandler extends Thread{

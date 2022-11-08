@@ -10,7 +10,7 @@ import javafx.scene.image.ImageView;
 
 /**
  * @author Steven Engel
- * @ImageButton.java This file provides an easy shortcut for making ToggleButtons with images as their icons. This is useful for the tools in MyToolbar.java.
+ * This file provides an easy shortcut for making ToggleButtons with images as their icons. This is useful for the tools in MyToolbar.java.
  * It also communicates to MyToolbar which tool has been selected to determine mouse functionality on the canvas.
  */
 public class ImageButton extends ToggleButton {

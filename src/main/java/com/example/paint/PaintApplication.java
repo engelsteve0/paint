@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
@@ -29,140 +28,125 @@ import java.io.IOException;
 import javafx.embed.swing.SwingFXUtils;
 
 /**@author Steven Engel
-@PaintApplication.java:
 The "brains" of the operation. This class launches a JavaFX application and instantiates various objects associated with said application.
 This class also controls various functions which relate to the program as a whole (as opposed to particular files/canvases)
  *
  */
 public class PaintApplication extends Application {
-    private static Stage stage; //ensures that the stage can be referenced in functions
-    private static Scene scene; //allows scene's style to be modified
-    private static MyCanvas currentCanvas; //references the canvas currently shown on screen
-    private static StackPane currentRoot;  //references the stackpane of canvas and overlay shown on screen
-    private static MyToolbar toolbar;      //holds the tools- just below the file menu
-    private static ScrollPane sp;          //holds the canvas- allows it to be scrollable
-    private static TabPane tabpane;        //holds the tabs, each of which have a canvas associated with them
-    private static int tabsClosed;         //keeps track of number of tabs closed- for smart save on close
+    private static Stage stage;                 //ensures that the stage can be referenced in functions
+    private static Scene scene;                 //allows scene's style to be modified
+    private static MyCanvas currentCanvas;      //references the canvas currently shown on screen
+    private static StackPane currentRoot;       //references the stackpane of canvas and overlay shown on screen
+    private static MyToolbar toolbar;           //holds the tools- just below the file menu
+    private static ScrollPane sp;               //holds the canvas- allows it to be scrollable
+    private static TabPane tabpane;             //holds the tabs, each of which have a canvas associated with them
+    private static int tabsClosed;              //keeps track of number of tabs closed- for smart save on close
     private static UndoRedoButton undoButton;   //defines the undo and redo buttons
     private static UndoRedoButton redoButton;
     private static boolean closing = false;     //checks if the user is trying to close the program
     private static boolean nightMode = false;   //tracks if the user has toggled night mode
     private static boolean enableAutoSave = false;     //enable autosave- off by default
     private static Label autoSaveTimer;
-    private static boolean showAutoSaveTimer = true;           //boolean for whether autosave timer should be displayed or not
+    private static boolean showAutoSaveTimer = true;   //boolean for whether autosave timer should be displayed or not
     private static BufferedImage renderedImage;
     private static String extension;
-    private static int autoSaveDuration = 300;                  //stores autosave duration in seconds
+    private static int autoSaveDuration = 300;         //stores autosave duration in seconds
     private static MyMenu menu;
     @Override
-    /**
-     * Starts the application, effectively the "constructor"
-     */
+    //Starts the application, effectively the "constructor"
     public void start(Stage stage) throws IOException {
 
         //sets up the log handler
-        String dummyArgs[] = {""};
+        String[] dummyArgs = {""};
         LogHandler.main(dummyArgs);
         LogHandler.getLogHandler().writeToLog(false, "Application started successfully.");
+
         //This section sets up the GUI and menu.
-        this.stage = stage;
+        PaintApplication.stage = stage;
         stage.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png")));
-        BorderPane layout = new BorderPane(); //uses a grid to align gui elements neatly- considering multiple grids for different parts of gui
-        this.tabpane = new TabPane(); //for storing different tabs (canvases)
+        BorderPane layout = new BorderPane();                               //uses a grid to align gui elements neatly- considering multiple grids for different parts of gui
+        tabpane = new TabPane();                                       //for storing different tabs (canvases)
         tabpane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        this.sp = new ScrollPane();   //creates a new scrollpane, containing the canvas. This allows image to be scrolled through
+        sp = new ScrollPane();                                         //creates a new scrollpane, containing the canvas. This allows image to be scrolled through
         sp.setVisible(true);
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         sp.setFitToHeight(true);
         sp.setFitToWidth(true);
-        sp.setPannable(true);                               //allows user to pan through pane
+        sp.setPannable(true);                                               //allows user to pan through pane
         layout.setCenter(sp);
-        layout.setAlignment(sp, Pos.CENTER);
-        newImage();                                         //starts with a blank slate
-        tabpane.getSelectionModel().selectedItemProperty().addListener(         //if user has switched tab,
+        BorderPane.setAlignment(sp, Pos.CENTER);
+        newImage();                                                         //starts with a blank slate
+        tabpane.getSelectionModel().selectedItemProperty().addListener(     //if user has switched tab,
                 (ov, t, t1) -> {
-                    currentCanvas = ((MyTab) t1).getCurrentCanvas();            //change canvas to that tab's canvas
-                    this.currentRoot = ((MyTab) t1).getCurrentRoot();
+                    currentCanvas = ((MyTab) t1).getCurrentCanvas();        //change canvas to that tab's canvas
+                    currentRoot = ((MyTab) t1).getCurrentRoot();
                     sp.setContent(currentRoot);
-                    if(currentCanvas.getLastSaved()!=null){                     //Set window title to reflect newly selected tab's contents
+                    if(currentCanvas.getLastSaved()!=null){                 //Set window title to reflect newly selected tab's contents
                         stage.setTitle("Paint: " + currentCanvas.getLastSaved());}
                     else{
                         stage.setTitle("Paint: New Image");}
-                    if(tabpane.getTabs().size()<2)                              //removes close option for last tab to avoid errors
+                    if(tabpane.getTabs().size()<2)                          //removes close option for last tab in pane to avoid errors
                         tabpane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
                     else
                         tabpane.setTabClosingPolicy(TabPane.TabClosingPolicy.SELECTED_TAB);
-                    toolbar.setupTools(); //updates toolbar to respond to current canvas
-                    ((MyTab) t).setAutoSaveTimer(false);        //pause autosave timer for previous tab, resume for new tab
+                    toolbar.setupTools();                                   //updates toolbar to respond to current canvas
+                    ((MyTab) t).setAutoSaveTimer(false);                    //pause autosave timer for previous tab, resume for new tab
                     ((MyTab) t1).setAutoSaveTimer(true);
                 }
         );
 
-        this.menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
-        this.undoButton = new UndoRedoButton(true, new Image(PaintApplication.class.getResourceAsStream("/tools/undo.png")), 16, 16);
+        menu = new MyMenu(); //see MyMenu.java (extends the MenuBar class)
+        undoButton = new UndoRedoButton(true, new Image(PaintApplication.class.getResourceAsStream("/tools/undo.png")), 16, 16);
         undoButton.setTooltip(new Tooltip("Undo (CTRL + Z)"));
-        this.redoButton = new UndoRedoButton(false, new Image(PaintApplication.class.getResourceAsStream("/tools/redo.png")), 16, 16);
+        redoButton = new UndoRedoButton(false, new Image(PaintApplication.class.getResourceAsStream("/tools/redo.png")), 16, 16);
         redoButton.setTooltip(new Tooltip("Redo (CTRL + Y)"));
         Button saveButton = new Button();
         saveButton.setTooltip(new Tooltip("Save (CTRL + S)"));
-        ImageView image = new ImageView(new Image(PaintApplication.class.getResourceAsStream("/tools/save.png")));         //set the given image to be this button's icon
+        ImageView image = new ImageView(new Image(PaintApplication.class.getResourceAsStream("/tools/save.png"))); //set the given image to be this button's icon
         image.setFitHeight(16);
         image.setFitHeight(16);
         image.setPreserveRatio(true);                           //gets buttons to display properly
         saveButton.setGraphic(image);
-        saveButton.setOnAction(e->{        //Saves when save button is pressed
+        saveButton.setOnAction(e->{                             //Saves when save button is pressed
             save(currentCanvas.getLastSaved());
         });
-        this.autoSaveTimer = new Label("");
+        autoSaveTimer = new Label("");
         HBox menuBox = new HBox(menu, saveButton, undoButton, redoButton, autoSaveTimer); //creates undo and redo buttons, adds to an hbox with rest of menu
-        this.toolbar = new MyToolbar(); //see MyToolbar.java (extends the Toolbar class)
+        toolbar = new MyToolbar(); //see MyToolbar.java (extends the Toolbar class)
         VBox top = new VBox();
         top.getChildren().addAll(menuBox, toolbar, tabpane); //creates a vertical box for the menu, toolbar, and tabpane, allowing them all to rest at the top
         layout.setTop(top);
-        layout.setAlignment(top, Pos.TOP_LEFT);
+        BorderPane.setAlignment(top, Pos.TOP_LEFT);
 
-        this.scene = new Scene(layout, 600, 480); //makes a scene (pun intended)
+        scene = new Scene(layout, 600, 480); //makes a scene (pun intended)
         stage.setScene(scene);
         stage.setResizable(true);
         stage.show(); //Displays stage which hosts the scene which hosts the grid which hosts the canvas which hosts the gc
 
         stage.getScene().getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, this::exitProgramWarning);
         //This section houses the keyboard shortcuts.
-        scene.setOnKeyReleased(new EventHandler<KeyEvent>() {       //implements save with ctrl + s
-            @Override
-            public void handle(KeyEvent event) {
-                if (event.isControlDown() && (event.getCode() == KeyCode.S)) {
-                    save(currentCanvas.getLastSaved());
-                }
-                else if (event.isControlDown() && (event.getCode() == KeyCode.O)) { //implements open with control o
-                    chooseFile("Open Image file", false);
-                }
-                else if (event.isControlDown() && (event.getCode() == KeyCode.N)) { //implements new file with control n
-                    newImage();
-                }
-                else if (event.isControlDown() && (event.getCode() == KeyCode.Z)) { //implements undo with control z
-                    undo();
-                }
-                else if (event.isControlDown() && (event.getCode() == KeyCode.Y)) { //implements redo file with control y
-                    redo();
-                }
-                else if (event.isControlDown() && (event.getCode() == KeyCode.X)) { //implements cut with control X
-                    toolbar.cutImage();
-                }
-                else if (event.isControlDown() && (event.getCode() == KeyCode.C)) { //implements copy with control c
-                    toolbar.copyImage();
-                }
-                else if (event.isControlDown() && (event.getCode() == KeyCode.V)) { //implements paste with control v
-                    try{
+        scene.setOnKeyReleased(event -> {
+            String kc = event.getCode().toString();
+            if(event.isControlDown()){
+                switch (kc){
+                    case "S": save(currentCanvas.getLastSaved()); break;                //implements save with control s
+                    case "O": chooseFile("Open Image file", false); break;   //implements open with control o
+                    case "N": newImage(); break;                                        //implements new file with control n
+                    case "Z": undo(); break;                                            //implements undo with control z
+                    case "Y": redo(); break;                                            //implements redo file with control y
+                    case "X": toolbar.cutImage(); break;                                //implements cut with control X
+                    case "C": toolbar.copyImage(); break;                               //implements copy with control c
+                    case "V": try{                                                      //implements paste with control v
                         toolbar.pasteImage();
                     }
-                    catch(Exception f){}
+                    catch(Exception f){}; break;
                 }
-                else if ((event.getCode() == KeyCode.F11)) { //implements fullscreen toggle
-                    getStage().setFullScreen(!PaintApplication.getStage().isFullScreen());
-                }
-            }});
+            }
+            else if ((event.getCode() == KeyCode.F11)) { //implements fullscreen toggle
+                getStage().setFullScreen(!PaintApplication.getStage().isFullScreen());
+            }
+        });
 
     }
 
@@ -384,17 +368,11 @@ public class PaintApplication extends Application {
                                 if(previousExtension.equals("png")||previousExtension.equals("png*")) {     //if saving from a png to something else, warn about transparency loss
                                     //create warning popup
                                     savePrompted = true;
-                                    Stage dialog = new Stage();                               //creates a new popup window asking if user still wants to save
-                                    dialog.initStyle(StageStyle.UNDECORATED);                 //Looks ugly, but prevents user from messing up tab counts with x button for aware save
-                                    dialog.setTitle("WARNING!");
-                                    dialog.initModality(Modality.APPLICATION_MODAL);
-                                    dialog.initOwner(PaintApplication.getStage());
-                                    dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+                                    CustomPrompt dialog = new CustomPrompt(false, "WARNING!", false); //creates a new popup window asking if user still wants to save
                                     VBox dialogVbox = new VBox(20);
                                     Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
                                     Text t = new Text("Saving this image in that format will cause transparency to be lost. Are you sure that you want to save?");
                                     t.setFont(CS);
-
                                     Button saveButton = new Button("Yes, Save"); //Gives user options for saving, not saving, or cancelling the operation
                                     saveButton.setOnAction(e-> {
                                         try {
@@ -422,7 +400,6 @@ public class PaintApplication extends Application {
                                     Scene dialogScene = new Scene(dialogVbox, 600, 60);
                                     dialog.setScene(dialogScene);                   //displays window to user
                                     dialog.show();
-                                    dialog.setResizable(false);                     //don't let user resize; this is just an alert window
                                 }
                             BufferedImage newBufferedImage = new BufferedImage(renderedImage.getWidth(), renderedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
                             newBufferedImage.createGraphics().drawImage(renderedImage, 0, 0, java.awt.Color.WHITE, null);
@@ -451,7 +428,6 @@ public class PaintApplication extends Application {
     public static void saveAs() {       //allows user to choose where a file is saved
         MyTab selTab = (MyTab) tabpane.getSelectionModel().getSelectedItem();
         String name = selTab.getTabName();
-
         File file = chooseFile("Save " + name + " as...", true);  //opens file explorer
         if(file!=null) {    //if the chosen file is not null, stored reference to it in lastSaved, save to that file
             save(file);
@@ -468,7 +444,7 @@ public class PaintApplication extends Application {
                 tabpane.getTabs()) {
             tabpane.getSelectionModel().select(tabs);           //selects each as it goes along in order
             currentCanvas = ((MyTab)tabs).getCurrentCanvas();   //gets canvas assigned to each to perform save operation correctly
-            if (currentCanvas.getDirty()==true){
+            if (currentCanvas.getDirty()){
                 ((MyTab)tabs).savePrompt(false); //asks user about each file
             }
             else {
@@ -509,24 +485,22 @@ public class PaintApplication extends Application {
      */
     public static void zoom() { //handles zooming/scaling with mouse
         currentRoot.setOnScroll(
-                new EventHandler<ScrollEvent>() {
-                    @Override
-                    public void handle(ScrollEvent event) {
-                        if(event.isControlDown()) { //must have control down
-                            double zoomFactor = 1.05;   //factor to zoom by
-                            double deltaY = event.getDeltaY();
-                            if (deltaY < 0){            //checks if you scroll up, zooms in
-                                zoomFactor = 0.95;
-                            }
-                            currentRoot.setScaleX(currentRoot.getScaleX() * zoomFactor);  //resizes canvas appropriately
-                            currentRoot.setScaleY(currentRoot.getScaleY() * zoomFactor);
-                            sp.setHmax(sp.getHmax()*zoomFactor);                //sizes scrollpane appropriately
-                            sp.setHmin(sp.getHmin()*zoomFactor);
-                            sp.setVmax(sp.getVmax()*zoomFactor);                //sizes scrollpane appropriately
-                            sp.setVmin(sp.getVmin()*zoomFactor);
+                event -> {
+                    if (event.isControlDown()) { //must have control down
+                        double zoomFactor = 1.05;   //factor to zoom by
+                        double deltaY = event.getDeltaY();
+                        if (deltaY < 0) {            //checks if you scroll up, zooms in
+                            zoomFactor = 0.95;
                         }
-                        event.consume();
-                    }});}
+                        currentRoot.setScaleX(currentRoot.getScaleX() * zoomFactor);  //resizes canvas appropriately
+                        currentRoot.setScaleY(currentRoot.getScaleY() * zoomFactor);
+                        sp.setHmax(sp.getHmax() * zoomFactor);                //sizes scrollpane appropriately
+                        sp.setHmin(sp.getHmin() * zoomFactor);
+                        sp.setVmax(sp.getVmax() * zoomFactor);                //sizes scrollpane appropriately
+                        sp.setVmin(sp.getVmin() * zoomFactor);
+                    }
+                    event.consume();
+                });}
     /**
      * Creates a new tab and sets up its zoom controls. Shows its canvas, as well.
      */
@@ -535,7 +509,6 @@ public class PaintApplication extends Application {
         tabpane.getTabs().add(tab);
         tabpane.getSelectionModel().select(tab);
         currentRoot = tab.getCurrentRoot();
-        //sp.setContent(currentCanvas);
         zoom();                                     //gets zoom controls working again
         updateTab(tab);
         LogHandler.getLogHandler().writeToLog(true, "New tab created.");
@@ -561,11 +534,7 @@ public class PaintApplication extends Application {
                 break;}}
         if(!allClean){                                                  //if all canvases are clean, skip all of the following
             event.consume();                                                //prevents program from closing immediately
-            Stage dialog = new Stage();                                     //creates a new window
-            dialog.setTitle("Unsaved Work");
-            dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-            dialog.initOwner(PaintApplication.getStage());
-            dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+            CustomPrompt dialog = new CustomPrompt(true, "Unsaved Work", false);      //creates a new window
             VBox dialogVbox = new VBox(20);
             Font CS = new Font("Times New Roman", 12);  //Changed to Times New Roman because Comic Sans was too fun
             Text t =  new Text("You have one or more unsaved canvases. Would you like to save your work?");
@@ -577,7 +546,7 @@ public class PaintApplication extends Application {
                         tabpane.getTabs()) {
                     ((MyTab) tabs).stopAutoSaveTimer();
                 }
-                this.closing = true;
+                closing = true;
                 saveAll();
             });
             Button closeButton = new Button("Don't Save");  //close program without saving
@@ -600,7 +569,6 @@ public class PaintApplication extends Application {
             Scene dialogScene = new Scene(dialogVbox, 450, 60);
             dialog.setScene(dialogScene);                   //displays window to user
             dialog.show();
-            dialog.setResizable(false);                     //don't let user resize; this is just an alert window
         }
         else {
             for (Tab tabs:

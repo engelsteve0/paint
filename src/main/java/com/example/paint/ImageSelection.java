@@ -7,7 +7,7 @@ import javafx.scene.image.Image;
 
 /**
  * @author Steven Engel
- * @ImageSelection.java: A class for storing information related to the selected portion of each tab
+ * A class for storing information related to the selected portion of each tab
  */
 public class ImageSelection {
     private int state;  //used to keep track of if this tab's canvas/layer has a selection/progression through interactions.

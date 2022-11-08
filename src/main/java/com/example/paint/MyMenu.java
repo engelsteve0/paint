@@ -5,13 +5,10 @@ package com.example.paint;
 
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.Font;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
@@ -20,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Steven Engel
- * @MyMenu.java: This file houses much of the GUI code needed to make the menubar across the top, as well as allowing for dialog popups for some of these options to be created.
+ * This file houses much of the GUI code needed to make the menubar across the top, as well as allowing for dialog popups for some of these options to be created.
  */
 public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which contains Menus, which dropdown and contain MenuItems
     /**
@@ -144,11 +141,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
      * @param bodyText The text to be displayed in the body of the window.
      */
     public void createPopup(String titleText, String bodyText) {        //creates a 600x200 popup window
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle(titleText);
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        final CustomPrompt dialog = new CustomPrompt(true, titleText, true);                               //creates a new window
         VBox dialogVbox = new VBox(20);
         Font CS = new Font("Times New Roman", 12);
         Text t =  new Text(bodyText);
@@ -165,11 +158,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
      * Creates a 600x200 popup window specifically for resizing the canvas, with button functions for saving changes, cancelling.
      */
     public void createResizePopup() {        //creates a 600x200 popup window specifically for resizing with button functions for saving changes, cancelling
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle("Resize Canvas");
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        final CustomPrompt dialog = new CustomPrompt(true, "Resize Canvas", true);                               //creates a new window
         VBox dialogVbox = new VBox(20);
         Font CS = new Font("Times New Roman", 12);
         Text t =  new Text("Specify the new size of the canvas in x and y pixels: ");
@@ -229,11 +218,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
      * Creates a 600x70 popup window specifically built for clearing canvas confirmation.
      */
     public void createClearCanvasPopup() {        //creates a 600x70 popup window specifically built for clearing canvas confirmation
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle("Clear canvas: are you sure?");
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        final CustomPrompt dialog = new CustomPrompt(true, "Clear canvas: are you sure?", false);                               //creates a new window
         VBox dialogVbox = new VBox(20);
         Font CS = new Font("Times New Roman", 12);
         Text t =  new Text("This will cause the current canvas to be cleared and you will lose anything on said canvas. Are you sure you want to do this?");
@@ -257,11 +242,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
      * Creates a 600x200 popup window specifically built for autosave settings.
      */
     public void createAutoSavePopup() {        //creates a 600x200 popup window specifically built for autosave settings
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle("Autosave Settings");
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        final CustomPrompt dialog = new CustomPrompt(true, "Autosave Settings", true);                               //creates a new window
         Button toggleButton = new Button();
         Label autoSaveDesc = new Label("The autosave feature automatically saves each canvas after the time shown.");   //informs user about autosave
         if(PaintApplication.getEnableAutoSave()){
@@ -338,11 +319,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
      * Creates a 600x200 popup window specifically built for rotation settings.
      */
     public void createRotateCanvasPopup() {        //creates a 600x200 popup window specifically built for rotation settings
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle("Rotation Settings");
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        final CustomPrompt dialog = new CustomPrompt(true, "Rotation Settings", true);                               //creates a new window
         Button toggleButton = new Button();
         Label rotateDesc = new Label("Enter the number of degrees to rotate by and choose whether this should apply to the whole canvas or selection:");   //informs user about autosave
         AtomicBoolean wholeCanvas = new AtomicBoolean(true);
@@ -399,11 +376,7 @@ public class MyMenu extends MenuBar{ //hierarchy: this is a MenuBar, which conta
      * Creates a specialized popup for allowing the user to flip/mirror the canvas
      */
     public void createFlipCanvasPopup() {
-        final Stage dialog = new Stage();                               //creates a new window
-        dialog.setTitle("Flip/Mirror Settings");
-        dialog.initModality(Modality.APPLICATION_MODAL);                //only allows user to open one of these, pushes to front
-        dialog.initOwner(PaintApplication.getStage());
-        dialog.getIcons().add(new Image(PaintApplication.class.getResourceAsStream("/icon.png"))); //adds the official icon to window
+        final CustomPrompt dialog = new CustomPrompt(true, "Flip/Mirror Settings", true);                               //creates a new window
         Label desc = new Label("Choose what type of flip (or mirror) you would like to apply to the current canvas: ");   //informs user about options
 
         Button mirrorButton = new Button("Mirror Image");
