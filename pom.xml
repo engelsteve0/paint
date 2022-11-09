@@ -13,7 +13,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.8.2</junit.version>
     </properties>
-
+    <parent>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx</artifactId>
+        <version>18.0.1</version>
+    </parent>
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
