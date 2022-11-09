@@ -1,0 +1,114 @@
+P A I N T Version 1.0.0 -  11/06/2022
+New features:
+  * Full Release
+  * Refactoring of code throughout project for clarity, organization
+  * Video displaying features (see link below)
+Known issues:
+  * Selection rotations with non-standard (not 90, 180, 270) angles can occassionally leave parts of where they were on the old canvas behind
+  * Due to JavaFX limitations, various operations can leave a slight blur in the image on high-DPI monitors (selection, undo/redo, flip/mirror, etc.)
+Links:
+  * https://github.com/engelsteve0/paint
+  * Demo video: https://www.youtube.com/watch?v=UUUfT3o7VMw
+P A I N T Version 0.3.2 -  10/19/2022
+New features:
+  * Added tooltips to all tools
+  * Added new Transformations section to toolbar (resize, flip/mirror, rotate)
+  * Added ability to flip both horizontally, vertically, and mirror (both)
+  * Added ability to rotate both a full canvas and selection anywhere between 1 and 359 degrees with auto-resizing
+  * Added logging, utilizing threading. Logs directory is found under user's home directory/paint/logs
+  * Added ability to clear logs from directory (except for current session's log) in the application
+Known issues:
+  * Selection rotations with non-standard (not 90, 180, 270) angles can occassionally leave parts of where they were on the old canvas behind
+Expected next sprint:
+  * Fixing previous issues where possible
+  * Polishing code, full release
+Links:
+  * https://github.com/engelsteve0/paint
+P A I N T Version 0.1.6 -  10/07/2022
+New features:
+  * Added autosave ability, with a separate countdown timer for each tab (using threads)
+  * Added new autosave settings popup under file menu, allows user to toggle autosave itself, timer visibility, autosave timer duration
+  * Saving manually automatically resets countdown timer
+  * Added warning/ability to cancel for when user attempts to save a png as a jpg/bmp (warns user about transparency loss)
+  * Added javadocs to all major functions in code and files
+  * Added 3 unit tests to code
+Known issues:
+  * No new known issues
+Expected next sprint:
+  * Fixing previous issues where possible (see below)
+Links:
+  * https://github.com/engelsteve0/paint
+P A I N T Version 0.0.8 -  09/30/2022
+New features:
+  * Added undo and redo (using two stacks for each tab), with buttons and keyboard shortcuts
+  * Added ability to select, copy, cut, and paste parts of an image, with keyboard shortcuts
+  * Added ability to directly move a selected part of an image
+  * Added a save icon
+  * Added an edit menu, with undo, redo, copy, cut, paste, resize, and clear operations
+  * Added a cross/axes/t-square/plus sign shape tool
+  * Added a polygon tool, can draw any number of sides (with user input)
+  * Added a night mode option, with a toggle button under the view menu
+Known issues:
+  * Adding tabs and then doing a certain sequences of undos and redos can cause undos to take two "undo" operations to actually register. This is not program-breaking, but is mildly annoying.
+  * Undo, redo, copying/cutting/pasting, etc. can cause smaller images to become slightly blurred on smaller monitors
+Expected next sprint:
+  * Adding autosave ability
+Links:
+  * https://github.com/engelsteve0/paint
+P A I N T Version 0.0.4 -  09/26/2022
+New features:
+  * Added color grabber tool
+  * Added square/rect and circle/ellipse tools. To get a perfect square/perfect circle, hold shift while drawing. Otherwise, draws a rect/ellipse
+  * Added dashed line tool, scales with width/size
+  * Added tabs, each of which has a canvas/file associated with it. Name updates based on what canvas is saved as.
+  * Added smart/aware save warning, both for closing the whole program, and individual tabs
+  * Added a Save All option to the file menu
+  * Added a Resize Canvas option to the file menu- resizes canvas area to user-specified pixel width/height. Image scales correctly but may blur slightly
+  * Added ability to save as a bmp, fixed previous bug where jpgs were actually saving as pngs. Can now save in 3 file formats (png, jpg, bmp)
+Known issues:
+  * Color grabber will usually get the same color as was used to create a feature, but if the line width is too small, it may be a "blur" of that color
+Expected next sprint:
+  * Adding undo, redo, clear canvas options, more tools, selecting parts of image
+Links:
+  * https://github.com/engelsteve0/paint
+P A I N T Version 0.0.2 -  09/16/2022
+New features:
+  * Added exit option to file menu, as well as separators dividing sections
+  * Added Help menu, with help and about options. These open popups which give the user information
+  * Added toolbar, with selectable pencil, eraser, straight line tools, as well as width/size and color pickers
+  * Pencil tool allows user to draw freely
+  * Eraser tool functions like pencil tool but always draws white (a "blank" canvas)
+  * Line tool allows user to preview a straight line visually. When the mouse is released, the line is actually added to the canvas.
+  * Width/size picker includes a slider and text area, allowing the user to choose any value between 1 and 50
+  * Size and color pickers affect the width/size and color of the pencil/line being drawn (does not affect eraser tool)
+  * Gave user ability to pan around canvas by grabbing and dragging with left mouse when no tools are selected
+Known issues:
+  * Rare bug: line drawing on a newly opened large canvas can occassionally cause the line to veer off in an unexpected direction
+  * This is quite rare and is easily corrected by the user, but is slightly annoying.
+Expected next sprint:
+  * Fixing bug listed above
+  * Adding more tools: fill, paintbrush for example.
+Links:
+  * https://github.com/engelsteve0/paint
+
+P A I N T Version 0.0.1 -  09/09/2022
+New features:
+  * The application itself, with a custom icon and title that displays the file currently being worked on
+  * Borderpane-based GUI: menu bar with menus for file, view, canvas for displaying image, scrollbars
+  * Opening various types of image files with file picker (PNG, JPG, etc.) 
+  * Saving (prompting user to save as for new files)
+  * Save as (allowing user to choose how (name/extension) and where (directory) files are written)
+  * Ability to toggle fullscreen mode under view menu
+  * Keyboard shortcuts for common actions (CTRL S for save, CTRL O for open, CTRL N for new, F11 for fullscreen, etc.)
+  * Ability to scale/scroll through large files
+Known issues:
+  * JPG files will save with the JPG extension, however they are still actually saving with the PNG "saving method".
+       The "JPG" saving method occassionally fails to save files at all while displaying nothing to the user to indicate this.
+       For now, the PNG saving method is being utilized instead for all image files, but this will ideally be changed in a future release.
+	 To clarify, JPG files can presently be saved, but there is a superior method for doing so that should eventually be added
+Expected next sprint:
+  * Fixing JPG issue listed above
+  * Better zoom/pan/scroll controls- generally good so far but can become clunky near edges of files  
+  * Being able to actually paint on (edit) the image
+Links:
+  * https://github.com/engelsteve0/paint
